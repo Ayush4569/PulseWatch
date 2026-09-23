@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+*.DS_Store
+
+# Node modules
+*node_modules
+
+# Logs
+*.log
+
+# Env files
+*.env
+.env.local
+*test.js
+
+# Build output
+/dist
+backend/src/utils/futureplans.ts

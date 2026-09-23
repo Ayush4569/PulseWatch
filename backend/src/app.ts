@@ -1,3 +1,5 @@
+import dotevn from "dotenv"
+dotevn.config()
 import express from "express";
 import cors from "cors";
 
