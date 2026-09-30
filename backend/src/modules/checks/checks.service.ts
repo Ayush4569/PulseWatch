@@ -1,0 +1,66 @@
+import pool from "../../db/client.js";
+
+const performHealthCheckService = async (monitorId: string) => {
+    if (!monitorId) {
+        throw new Error("Monitor ID is required")
+    }
+    const client = await pool.connect();
+    try {
+        const monitor = await client.query(
+            "SELECT url FROM monitors WHERE id = $1",
+            [monitorId]
+        )
+        if (monitor.rows.length === 0) {
+            throw new Error("Monitor not found")
+        }
+
+        const { url } = monitor.rows[0];
+        const startTime = Date.now();
+
+        let statusCode: number | null = null;
+        let success = false;
+        let errorMessage: string | null = null;
+
+        try {
+            const response = await fetch(url, {
+                method: "GET",
+                signal: AbortSignal.timeout(10000)
+            });
+
+            statusCode = response.status;
+            success = response.ok;
+
+            if (!response.ok) errorMessage = response.statusText;
+        } catch (error) {
+            errorMessage = error instanceof Error ? error.message : "Unknown error";
+        }
+
+        const latency = Date.now() - startTime;
+
+        const insertResult = await client.query(
+            `
+    INSERT INTO monitor_checks
+        (monitor_id, status_code, latency_ms, success, error_message)
+    VALUES
+        ($1, $2, $3, $4, $5)
+    RETURNING
+        monitor_id,
+        status_code,
+        latency_ms,
+        success,
+        error_message
+    `,
+            [monitorId, statusCode, latency, success, errorMessage]
+        );
+
+        return insertResult.rows[0];
+    } catch (error) {
+        console.error("Failed to perform health check:", error);
+        throw error;
+    } finally {
+        client.release();
+    }
+
+}
+
+export {performHealthCheckService}
