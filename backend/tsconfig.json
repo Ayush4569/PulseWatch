@@ -5,11 +5,9 @@
     "rootDir": "./src",
     "outDir": "./dist",
 
-
     "module": "nodenext",
     "target": "es2022",
-    "moduleResolution":"nodenext",
-
+    "moduleResolution": "nodenext",
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
@@ -20,9 +18,9 @@
     "jsx": "react-jsx",
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
+    // "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
-  "include":["src"]
+  "include": ["src"]
 }

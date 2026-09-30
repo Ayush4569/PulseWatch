@@ -1,10 +1,9 @@
 import { CustomError } from "../../utils/apiError.js";
 import pool from "../../db/client.js";
-const createMonitorService = async (url: string, interval: number, userId: string) => {
+const createMonitorService = async (url, interval, userId) => {
     const client = await pool.connect();
     try {
-        const result = await client.query(
-            `INSERT INTO monitors
+        const result = await client.query(`INSERT INTO monitors
                 (user_id, url, interval_seconds)
              VALUES
                 ($1, $2, $3)
@@ -13,12 +12,8 @@ const createMonitorService = async (url: string, interval: number, userId: strin
                 url,
                 interval_seconds,
                 is_active,
-                created_at`,
-            [userId, url, interval]
-        );
-
+                created_at`, [userId, url, interval]);
         const monitor = result.rows[0];
-
         return {
             id: monitor.id,
             url: monitor.url,
@@ -26,15 +21,13 @@ const createMonitorService = async (url: string, interval: number, userId: strin
             status: "WAITING",
             createdAt: monitor.created_at
         };
-
-    } catch (error) {
+    }
+    catch (error) {
         console.error("Error creating monitor:", error);
         throw new CustomError(500, "Error creating monitor");
-    } finally {
+    }
+    finally {
         client.release();
     }
-}
-
-export {
-    createMonitorService
-}
+};
+export { createMonitorService };

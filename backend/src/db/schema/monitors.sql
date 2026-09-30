@@ -5,9 +5,7 @@ CREATE TABLE monitors (
     interval_seconds INTEGER NOT NULL,
     is_active boolean NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     FOREIGN KEY(user_id) REFERENCES users(id)
-
 );
-

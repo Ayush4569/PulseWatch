@@ -1,5 +1,4 @@
 import z from "zod";
-
 const monitorSchema = z.object({
     url: z.url({
         protocol: /^https$/,
@@ -10,6 +9,5 @@ const monitorSchema = z.object({
         z.literal(60),
         z.literal(300)
     ])
-})
-
+});
 export default monitorSchema;

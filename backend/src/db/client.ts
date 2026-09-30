@@ -1,6 +1,7 @@
+import { config } from "../config/env.js"
 import {Pool} from "pg"
 
-const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_jPDFUdypLn28@ep-misty-morning-b3elho0l-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+const connectionString = config.DATABASE_URL
 if(!connectionString) throw new Error("DB URL ABSENT!!")
 
     
