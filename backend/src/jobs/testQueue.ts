@@ -1,6 +1,11 @@
-import monitorQueue from "./queues.js";
-const monitorId = "0eef8f80-3b20-4735-8a07-77dda2a46067";
-const job = await monitorQueue.add('health-check',{monitorId})
-console.log(`Job added successfully. Job ID: ${job.id}`);
+import monitorQueue from "./queue.js";
+import { registerMonitorScheduler } from "./scheduler.js";
+const monitorId = "72c56aac-8b95-4b3f-aa56-bd1e810ec577";
+const interval = 30;
+await registerMonitorScheduler(monitorId, interval);
+
+console.log(
+    `Scheduler registered for monitor ${monitorId} every ${interval} seconds`
+);
 
 await monitorQueue.close();

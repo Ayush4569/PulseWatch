@@ -1,4 +1,5 @@
 import pool from "../../db/client.js";
+import { processIncident } from "../incidents/incident.service.js";
 
 const performHealthCheckService = async (monitorId: string) => {
     if (!monitorId) {
@@ -52,7 +53,7 @@ const performHealthCheckService = async (monitorId: string) => {
     `,
             [monitorId, statusCode, latency, success, errorMessage]
         );
-
+        await processIncident({monitorId,success,errorMessage})
         return insertResult.rows[0];
     } catch (error) {
         console.error("Failed to perform health check:", error);
