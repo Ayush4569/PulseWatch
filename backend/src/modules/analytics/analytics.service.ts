@@ -5,21 +5,21 @@ const getAllMonitorsAnalyticsQuery = `
     SELECT
         m.id AS monitor_id,
 
-        COUNT(mc.id) AS total_checks,
+        COUNT(mc.id) AS "totalChecks",
 
         COUNT(mc.id) FILTER (
             WHERE mc.success = true
-        ) AS successful_checks,
+        ) AS "successfulChecks",
 
         COUNT(mc.id) FILTER (
             WHERE mc.success = false
-        ) AS failed_checks,
+        ) AS "failedChecks",
 
-        AVG(mc.latency_ms) AS avg_latency,
+        AVG(mc.latency_ms) AS "avgLatency",
 
-        MIN(mc.latency_ms) AS min_latency,
+        MIN(mc.latency_ms) AS "minLatency",
 
-        MAX(mc.latency_ms) AS max_latency,
+        MAX(mc.latency_ms) AS "maxLatency",
 
         CASE
             WHEN COUNT(mc.id) = 0 THEN NULL
@@ -45,21 +45,21 @@ const getMonitorAnalyticsQuery = `
     SELECT
         mc.monitor_id,
 
-        COUNT(*) AS total_checks,
+        COUNT(*) AS "totalChecks",
 
         COUNT(*) FILTER (
             WHERE mc.success = true
-        ) AS successful_checks,
+        ) AS "successfulChecks",
 
         COUNT(*) FILTER (
             WHERE mc.success = false
-        ) AS failed_checks,
+        ) AS "failedChecks",
 
-        AVG(mc.latency_ms) AS avg_latency,
+        AVG(mc.latency_ms) AS "avgLatency",
 
-        MIN(mc.latency_ms) AS min_latency,
+        MIN(mc.latency_ms) AS "minLatency",
 
-        MAX(mc.latency_ms) AS max_latency,
+        MAX(mc.latency_ms) AS "maxLatency",
 
         (
             COUNT(*) FILTER (

@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import monitorRoutes from "./modules/monitor/monitor.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import analyticRoutes from "./modules/analytics/analytics.routes.js";
+import { errorHandler } from "./utils/apiError.js";
 
 const app = express();
 
@@ -28,5 +29,5 @@ app.get("/health", (_req, res) => {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/monitors", monitorRoutes);
 app.use("/api/v1/analytics", analyticRoutes);
-
+app.use(errorHandler);
 export default app;

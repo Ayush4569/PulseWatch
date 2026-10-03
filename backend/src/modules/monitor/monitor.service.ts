@@ -57,7 +57,39 @@ const createMonitorService = async (url: string, interval: number, userId: strin
         client.release();
     }
 }
+const getMonitorsService = async (userId: string) => {
+    const client = await pool.connect();
 
+    try {
+        const result = await client.query(
+            `SELECT
+                id,
+                url,
+                interval_seconds AS interval,
+                is_active AS "isActive",
+                created_at AS "createdAt",
+                updated_at AS "updatedAt"
+             FROM monitors
+             WHERE user_id = $1`,
+            [userId]
+        );
+
+        return result.rows;
+    } catch (error) {
+        console.error(
+            "Error fetching monitors configuration:",
+            error
+        );
+
+        throw new CustomError(
+            500,
+            "Error fetching monitors configuration"
+        );
+    } finally {
+        client.release();
+    }
+};
 export {
-    createMonitorService
+    createMonitorService,
+    getMonitorsService
 }
