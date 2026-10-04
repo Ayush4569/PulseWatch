@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 
 import { connection } from "../queue.js";
 import { performHealthCheckService } from "../../modules/checks/checks.service.js";
+import { publishMonitorCheck } from "../../websocket/publisher.js";
 
 const processMonitor = new Worker(
   "Monitors",
@@ -10,8 +11,8 @@ const processMonitor = new Worker(
     console.log(
       `Processing job ${job.id} for monitor ${monitorId}...`
     );
-    const result = await performHealthCheckService(monitorId);
-    return result;
+    const {userId,...data} = await performHealthCheckService(monitorId);
+    await publishMonitorCheck(userId, data);
   },
   { connection }
 );

@@ -11,4 +11,6 @@ redis.on("error", (err) => {
     console.error("Redis connection error:", err);
 })
 
+export const redisPublisher = redis.duplicate();
+export const redisSubscriber = redis.duplicate();
 export default redis
