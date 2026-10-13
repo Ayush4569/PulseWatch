@@ -62,9 +62,11 @@ export const initalizeSocket = (server: httpServer) => {
 
                 case SOCKET_EVENTS['INCIDENT_CREATED']:
                     emitIncidentCreated(io, userId, data);
+                    break;  
                     
                 case SOCKET_EVENTS['INCIDENT_RESOLVED']:
                     emitIncidentResolved(io, userId, data);
+                    break;  
 
                 default:
                     console.warn(`Unknown socket event: ${type}`);

@@ -1,0 +1,157 @@
+import { Monitor, MonitorAnalytics, IncidentItem, MonitorCheckEvent, User } from "./types";
+
+export const MOCK_USER: User = {
+  id: "user-123",
+  username: "alex_developer",
+  email: "alex@example.com",
+  created_at: "2026-09-01T10:00:00Z",
+};
+
+export const MOCK_MONITORS: Monitor[] = [
+  {
+    id: "mon-1",
+    url: "https://api.pulsewatch.dev/health",
+    interval: 30,
+    isActive: true,
+    createdAt: "2026-09-10T12:00:00Z",
+    lastStatus: "UP",
+    lastLatencyMs: 142,
+    lastCheckedAt: new Date(Date.now() - 1000 * 45).toISOString(),
+    uptime: 99.98,
+  },
+  {
+    id: "mon-2",
+    url: "https://auth.pulsewatch.dev/v1/verify",
+    interval: 60,
+    isActive: true,
+    createdAt: "2026-09-12T14:30:00Z",
+    lastStatus: "UP",
+    lastLatencyMs: 88,
+    lastCheckedAt: new Date(Date.now() - 1000 * 120).toISOString(),
+    uptime: 99.95,
+  },
+  {
+    id: "mon-3",
+    url: "https://payments.example.com/checkout",
+    interval: 300,
+    isActive: true,
+    createdAt: "2026-09-15T09:15:00Z",
+    lastStatus: "DOWN",
+    lastLatencyMs: null,
+    lastCheckedAt: new Date(Date.now() - 1000 * 180).toISOString(),
+    lastErrorMessage: "HTTP 500 Internal Server Error",
+    hasActiveIncident: true,
+    uptime: 94.20,
+  },
+  {
+    id: "mon-4",
+    url: "https://cdn.example.net/assets/main.js",
+    interval: 60,
+    isActive: true,
+    createdAt: "2026-09-18T16:45:00Z",
+    lastStatus: "DEGRADED",
+    lastLatencyMs: 480,
+    lastCheckedAt: new Date(Date.now() - 1000 * 90).toISOString(),
+    uptime: 98.75,
+  },
+];
+
+export const MOCK_ANALYTICS: Record<string, MonitorAnalytics> = {
+  "mon-1": {
+    monitor_id: "mon-1",
+    totalChecks: 2880,
+    successfulChecks: 2879,
+    failedChecks: 1,
+    avgLatency: 142,
+    minLatency: 95,
+    maxLatency: 280,
+    uptime: 99.98,
+  },
+  "mon-2": {
+    monitor_id: "mon-2",
+    totalChecks: 1440,
+    successfulChecks: 1439,
+    failedChecks: 1,
+    avgLatency: 88,
+    minLatency: 60,
+    maxLatency: 210,
+    uptime: 99.95,
+  },
+  "mon-3": {
+    monitor_id: "mon-3",
+    totalChecks: 288,
+    successfulChecks: 271,
+    failedChecks: 17,
+    avgLatency: 310,
+    minLatency: 180,
+    maxLatency: 890,
+    uptime: 94.20,
+  },
+  "mon-4": {
+    monitor_id: "mon-4",
+    totalChecks: 1440,
+    successfulChecks: 1422,
+    failedChecks: 18,
+    avgLatency: 480,
+    minLatency: 120,
+    maxLatency: 1100,
+    uptime: 98.75,
+  },
+};
+
+export const MOCK_RECENT_CHECKS: MonitorCheckEvent[] = [
+  {
+    monitorId: "mon-1",
+    success: true,
+    statusCode: 200,
+    userId: "user-123",
+    latencyMs: 142,
+    errorMessage: null,
+    checkedAt: new Date(Date.now() - 1000 * 15).toISOString(),
+  },
+  {
+    monitorId: "mon-2",
+    success: true,
+    statusCode: 200,
+    userId: "user-123",
+    latencyMs: 88,
+    errorMessage: null,
+    checkedAt: new Date(Date.now() - 1000 * 45).toISOString(),
+  },
+  {
+    monitorId: "mon-3",
+    success: false,
+    statusCode: 500,
+    userId: "user-123",
+    latencyMs: 512,
+    errorMessage: "HTTP 500 Internal Server Error",
+    checkedAt: new Date(Date.now() - 1000 * 90).toISOString(),
+  },
+  {
+    monitorId: "mon-4",
+    success: true,
+    statusCode: 200,
+    userId: "user-123",
+    latencyMs: 480,
+    errorMessage: null,
+    checkedAt: new Date(Date.now() - 1000 * 140).toISOString(),
+  },
+];
+
+export const MOCK_INCIDENTS: IncidentItem[] = [
+  {
+    id: "inc-101",
+    monitorId: "mon-3",
+    failureReason: "HTTP 500 Internal Server Error — Connection refusal on database pool.",
+    startedAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+    status: "OPEN",
+  },
+  {
+    id: "inc-100",
+    monitorId: "mon-2",
+    failureReason: "Gateway Timeout (504)",
+    startedAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+    resolvedAt: new Date(Date.now() - 1000 * 60 * 165).toISOString(),
+    status: "RESOLVED",
+  },
+];

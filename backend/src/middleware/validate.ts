@@ -4,7 +4,7 @@ import { CustomError } from "../utils/apiError.js";
 
 const validate = (schema: ZodType)=> {
     return (req: Request, res: Response, next: NextFunction)=> {
-        const result = schema.safeParse(req.body || {});
+        const result = schema.safeParse(req.body ?? {});
 
         if (!result.success) {
             throw new CustomError(
