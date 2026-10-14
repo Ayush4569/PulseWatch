@@ -1,5 +1,5 @@
 import pool from "../../db/client.js";
-
+import { CustomError } from "../../utils/apiError.js";
 interface Incident {
     monitorId: string,
     success: boolean,
@@ -63,7 +63,125 @@ const processIncident = async ({ monitorId, success, errorMessage = "something w
     }
 }
 
+type IncidentStatus = "OPEN" | "RESOLVED";
+
+interface GetIncidentsOptions {
+  page: number;
+  limit: number;
+  status?: IncidentStatus;
+}
+
+const getIncidentsService = async (
+  userId: string,
+  { page, limit, status }: GetIncidentsOptions
+) => {
+  const client = await pool.connect();
+
+  try {
+    const offset = (page - 1) * limit;
+
+    const values: (string | number)[] = [userId];
+    let statusFilter = "";
+
+    if (status) {
+      values.push(status);
+      statusFilter = `AND i.status = $${values.length}`;
+    }
+
+    const countResult = await client.query(
+      `SELECT COUNT(*)::int AS total
+       FROM incidents i
+       JOIN monitors m ON m.id = i.monitor_id
+       WHERE m.user_id = $1
+       ${statusFilter}`,
+      values
+    );
+
+    const total: number = countResult.rows[0].total;
+
+    const dataValues = [...values, limit, offset];
+    const limitPlaceholder = dataValues.length - 1;
+    const offsetPlaceholder = dataValues.length;
+
+    const incidentsResult = await client.query(
+      `SELECT
+         i.id,
+         i.monitor_id AS "monitorId",
+         m.url AS "monitorUrl",
+         i.started_at AS "startedAt",
+         i.resolved_at AS "resolvedAt",
+         i.status,
+         i.failure_reason AS "failureReason"
+       FROM incidents i
+       JOIN monitors m ON m.id = i.monitor_id
+       WHERE m.user_id = $1
+       ${statusFilter}
+       ORDER BY i.started_at DESC, i.id DESC
+       LIMIT $${limitPlaceholder}
+       OFFSET $${offsetPlaceholder}`,
+      dataValues
+    );
+
+    return {
+      incidents: incidentsResult.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    if (error instanceof CustomError) throw error;
+
+    console.error("Error fetching incidents:", error);
+    throw new CustomError(500, "Failed to fetch incidents");
+  } finally {
+    client.release();
+  }
+};
+
+const getIncidentByIdService = async (
+  userId: string,
+  incidentId: string
+) => {
+  const client = await pool.connect();
+
+  try {
+    const result = await client.query(
+      `SELECT
+         i.id,
+         i.monitor_id AS "monitorId",
+         m.url AS "monitorUrl",
+         i.started_at AS "startedAt",
+         i.resolved_at AS "resolvedAt",
+         i.status,
+         i.failure_reason AS "failureReason"
+       FROM incidents i
+       JOIN monitors m ON m.id = i.monitor_id
+       WHERE i.id = $1 AND m.user_id = $2`,
+      [incidentId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new CustomError(404, "Incident not found");
+    }
+
+    return result.rows[0];
+  } catch (error) {
+    if (error instanceof CustomError) throw error;
+
+    console.error("Error fetching incident:", error);
+    throw new CustomError(500, "Failed to fetch incident");
+  } finally {
+    client.release();
+  }
+};
+
+
 
 export {
-    processIncident
+    processIncident,
+    getIncidentsService,
+    getIncidentByIdService
 }
