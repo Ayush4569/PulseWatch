@@ -1,67 +1,109 @@
 import pool from "../../db/client.js";
 import { CustomError } from "../../utils/apiError.js";
+import { publishIncidentCreated, publishIncidentResolved } from "../../websocket/publisher.js";
 interface Incident {
-    monitorId: string,
-    success: boolean,
-    errorMessage: string | null
+  userId: string
+  monitorId: string,
+  success: boolean,
+  errorMessage: string | null
 }
+
+
 const MAX_FAILURES = 3;
 
-const processIncident = async ({ monitorId, success, errorMessage = "something went wrong" }: Incident) => {
-    const client = await pool.connect();
-    const reason = errorMessage ?? "Unknown error";
-    try {
-        if (success) {
-            // update the incident record after a recovery
-            await client.query(
-                `UPDATE incidents SET resolved_at = NOW(), status='RESOLVED'
-                 WHERE monitor_id=$1 AND status = 'OPEN'`,
-                [monitorId]
-            );
-            return;
-        }
-        // Get the latest 3 checks for this monitor
-        const result = await client.query(
-            `SELECT success FROM monitor_checks WHERE monitor_id= $1 ORDER BY checked_at DESC LIMIT $2`, [monitorId, MAX_FAILURES]
-        );
+const processIncident = async ({
+  userId,
+  monitorId,
+  success,
+  errorMessage,
+}: Incident) => {
+  const client = await pool.connect();
 
-        if (result.rows.length < MAX_FAILURES) return;
+  const reason = errorMessage ?? "Unknown error";
 
-        // check for consecutive flavor before creating a duplicate incident.
-        const consecutiveFailures = result.rows.every(checks => checks.success == false);
-        if (!consecutiveFailures) return;
+  try {
+    // Recovery: resolve any open incident for this monitor.
+    if (success) {
+      const result = await client.query(
+        `UPDATE incidents
+         SET resolved_at = NOW(),
+             status = 'RESOLVED'
+         WHERE monitor_id = $1
+           AND status = 'OPEN'
+         RETURNING id, resolved_at AS "resolvedAt"`,
+        [monitorId]
+      );
 
-        // Don't create another incident if one is already open
-        const openIncident = await client.query(
-            `SELECT id
-             FROM incidents
-             WHERE monitor_id = $1
-               AND status = 'OPEN'
-             LIMIT 1`,
-            [monitorId]
-        );
+      // No open incident means there is nothing to resolve.
+      if (result.rows.length === 0) return;
 
-        if (openIncident.rows.length > 0) {
-            return;
-        }
+      for (const incident of result.rows) {
+        await publishIncidentResolved(userId, {
+          incidentId: incident.id,
+          monitorId,
+          resolvedAt: incident.resolvedAt,
+        });
+      }
 
-        // Create new incident
-        await client.query(
-            `INSERT INTO incidents
-                (monitor_id, failure_reason)
-             VALUES
-                ($1, $2)`,
-            [monitorId, reason]
-        );
-
-
-    } catch (error) {
-        console.log('Error processing incidents', error);
-        throw error;
-    } finally {
-        client.release();
+      return;
     }
-}
+
+    // Failure: fetch the latest three checks.
+    const checksResult = await client.query(
+      `SELECT success
+       FROM monitor_checks
+       WHERE monitor_id = $1
+       ORDER BY checked_at DESC, id DESC
+       LIMIT $2`,
+      [monitorId, MAX_FAILURES]
+    );
+
+    if (checksResult.rows.length < MAX_FAILURES) return;
+
+    const consecutiveFailures = checksResult.rows.every(
+      (check) => check.success === false
+    );
+
+    if (!consecutiveFailures) return;
+
+    // Don't create another incident if one is already open.
+    const openIncident = await client.query(
+      `SELECT id
+       FROM incidents
+       WHERE monitor_id = $1
+         AND status = 'OPEN'
+       LIMIT 1`,
+      [monitorId]
+    );
+
+    if (openIncident.rows.length > 0) return;
+
+    // Create the incident and retrieve its actual database ID.
+    const insertResult = await client.query(
+      `INSERT INTO incidents (monitor_id, failure_reason)
+       VALUES ($1, $2)
+       RETURNING id, started_at AS "startedAt"`,
+      [monitorId, reason]
+    );
+
+    if (insertResult.rows.length === 0) return;
+
+    const incident = insertResult.rows[0];
+
+    await publishIncidentCreated(userId, {
+      incidentId: incident.id,
+      monitorId,
+      failureReason: reason,
+      startedAt: incident.startedAt,
+    });
+  } catch (error) {
+    console.error("Error processing incidents:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 
 type IncidentStatus = "OPEN" | "RESOLVED";
 
@@ -181,7 +223,7 @@ const getIncidentByIdService = async (
 
 
 export {
-    processIncident,
-    getIncidentsService,
-    getIncidentByIdService
+  processIncident,
+  getIncidentsService,
+  getIncidentByIdService
 }

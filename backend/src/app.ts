@@ -7,6 +7,7 @@ import monitorRoutes from "./modules/monitor/monitor.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import checkRoutes from "./modules/checks/checks.routes.js";
 import analyticRoutes from "./modules/analytics/analytics.routes.js";
+import incidentRoutes from "./modules/incidents/incident.route.js";
 import { errorHandler } from "./utils/apiError.js";
 
 const app = express();
@@ -31,5 +32,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/monitors", monitorRoutes);
 app.use("/api/v1/analytics", analyticRoutes);
 app.use("/api/v1/checks", checkRoutes);
+app.use("/api/v1/incidents", incidentRoutes);
+
 app.use(errorHandler);
 export default app;

@@ -25,7 +25,7 @@ const getMonitors = asyncHandler(async (req, res) => {
     if (!userId) throw new CustomError(401, "Unauthorized!");
     const monitors = await getMonitorsService(userId);
 
-    return res.status(201).json(
+    return res.status(200).json(
         new ApiResponse(
             200,
             "Monitors fetched successfully",
@@ -59,7 +59,7 @@ const updateMontiorConfig = asyncHandler(async (req, res) => {
 
     const updatedMonitor = await updateMontiorService({url, interval}, userId, monitorId);
 
-    return res.status(201).json(
+    return res.status(200).json(
         new ApiResponse(
             200,
             "Monitor updated successfully",
@@ -75,7 +75,7 @@ const deleteMonitor = asyncHandler(async (req, res) => {
 
     await deleteMonitorService(userId,monitorId);
 
-    return res.status(201).json(
+    return res.status(200).json(
         new ApiResponse(
             201,
             "Monitor deleted successfully",
@@ -90,11 +90,13 @@ const toggleStatus = asyncHandler(async(req,res)=> {
     const { monitorId } = req.params as { monitorId: string };
     const {isActive} = req.body;
 
-    if(!isActive || !req.body) throw new CustomError(401, "A state is required");
+    if(typeof isActive != 'boolean') {
+        throw new CustomError(400, "isActive must be a boolean");
+    }
 
     await toggleMonitorStatusService(userId,monitorId,isActive);
 
-    return res.status(201).json(
+    return res.status(200).json(
         new ApiResponse(
             201,
             "Monitor toggled successfully",

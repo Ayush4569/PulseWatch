@@ -2,6 +2,7 @@ import { CustomError } from "../../utils/apiError.js";
 import ApiResponse from "../../utils/apiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { getMonitorCheckService, getMonitorCheckSeriesService } from "./checks.service.js";
+import { rangeSchema } from "./checks.validation.js";
 
 const getMonitorChecks = asyncHandler(async (req, res) => {
     const userId = req.user?.id;
@@ -29,7 +30,7 @@ const getMonitorChecks = asyncHandler(async (req, res) => {
 
     const { ...result } = await getMonitorCheckService(monitorId, userId, page, limit);
 
-    return res.status(201).json(
+    return res.status(200).json(
         new ApiResponse(
             200,
             "Monitor checks fetched",
@@ -45,11 +46,17 @@ const getMonitorCheckSeries = asyncHandler(async (req, res) => {
 
     const { monitorId } = req.params as { monitorId: string };
 
-    const { range } = req.body;
+    const range = (req.body.range ) ?? "1h";
 
-    const { ...result } = await getMonitorCheckSeriesService(monitorId, userId, range);
+    const valid = rangeSchema.safeParse(range);
 
-    return res.status(201).json(
+    if(!valid.success) {
+        throw new CustomError(401, "In-correct range!")
+    }
+
+    const { ...result } = await getMonitorCheckSeriesService(monitorId, userId, valid.data.range);
+
+    return res.status(200).json(
         new ApiResponse(
             200,
             "Monitor checks fetched",

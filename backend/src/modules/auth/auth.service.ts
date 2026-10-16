@@ -12,7 +12,7 @@ export interface UserResponse {
     id: string;
     username: string;
     email: string;
-    created_at: Date;
+    createdAt: Date;
 }
 
 export interface AuthTokens {
@@ -99,7 +99,7 @@ export const loginUserService = async (
             id: dbUser.id,
             username: dbUser.username,
             email: dbUser.email,
-            created_at: dbUser.created_at,
+            createdAt: dbUser.created_at,
         };
 
         // Generate tokens
@@ -185,7 +185,7 @@ export const refreshTokensService = async (
             id: dbUser.id,
             username: dbUser.username,
             email: dbUser.email,
-            created_at: dbUser.created_at,
+            createdAt: dbUser.created_at,
         };
 
         // Issue new tokens (Refresh Token Rotation)

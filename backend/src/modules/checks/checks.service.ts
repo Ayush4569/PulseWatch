@@ -8,7 +8,7 @@ const durationInSeconds: Record<duration, number> = {
     "1h": 60 * 60,
     "6h": 6 * 60 * 60,
     "24h": 24 * 60 * 60,
-    "3d": 2 * 24 * 60 * 60,
+    "3d": 3 * 24 * 60 * 60,
 }
 
 const performHealthCheckService = async (monitorId: string) => {
@@ -64,7 +64,7 @@ const performHealthCheckService = async (monitorId: string) => {
     `,
             [monitorId, statusCode, latency, success, errorMessage]
         );
-        await processIncident({ monitorId, success, errorMessage })
+        await processIncident({ userId,monitorId, success, errorMessage })
         return {
             ...insertResult.rows[0],
             userId
@@ -158,7 +158,7 @@ const getMonitorCheckSeriesService = async (monitorId: string, userId: string, r
              checked_at as "checkedAt"
              FROM monitor_checks WHERE monitor_id=$1
              AND checked_at >= NOW() - make_interval(secs=> $2:: double precision)
-             ORDER BY checked_at ASC, 
+             ORDER BY checked_at ASC
              `, [monitorId, seconds]
         );
 

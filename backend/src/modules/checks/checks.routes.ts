@@ -16,7 +16,6 @@ router.get(
 router.get(
   "/series/monitors/:monitorId",
   authenticate,
-  validate(rangeSchema),
   getMonitorCheckSeries
 );
 
