@@ -4,7 +4,7 @@ export const MOCK_USER: User = {
   id: "user-123",
   username: "alex_developer",
   email: "alex@example.com",
-  created_at: "2026-09-01T10:00:00Z",
+  createdAt: "2026-09-01T10:00:00Z",
 };
 
 export const MOCK_MONITORS: Monitor[] = [

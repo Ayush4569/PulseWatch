@@ -20,6 +20,6 @@ router.post("/register", validate(registerSchema), registerController);
 router.post("/login", validate(loginSchema), loginController);
 router.post("/logout", authenticate, logoutController);
 router.post("/refresh-token", validate(refreshTokenSchema), refreshTokenController);
-router.get("/me", authenticate, meController);
+router.get("/profile", authenticate, meController);
 
 export default router;

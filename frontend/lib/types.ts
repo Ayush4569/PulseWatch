@@ -2,7 +2,7 @@ export interface User {
   id: string;
   username: string;
   email: string;
-  created_at: string;
+  createdAt: string;
 }
 
 export interface AuthResponseData {
@@ -13,7 +13,7 @@ export interface AuthResponseData {
 export interface ApiResponse<T> {
   statusCode: number;
   message: string;
-  data: T;
+  data: T | null;
   success: boolean;
 }
 

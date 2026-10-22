@@ -1,86 +1,151 @@
+
 "use client";
 
-import React, { useState } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Activity, Mail, Lock, ArrowRight } from "lucide-react";
+import {
+  Activity,
+  Mail,
+  Lock,
+  ArrowRight,
+  LoaderCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState<string>("developer@example.com");
-  const [password, setPassword] = useState<string>("password123");
-  const router = useRouter();
+import { useAuthContext } from "@/context/auth-context";
+import { getApiErrorMessage } from "@/lib/api/client";
 
-  const handleSubmit = (e: React.FormEvent) => {
+export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuthContext();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    toast.success("Login preview successful!", { description: "Redirecting to dashboard..." });
-    router.push("/dashboard");
-  };
+
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    try {
+      await login({ email, password });
+
+      toast.success("Welcome back!", {
+        description: "Login successful. Redirecting to dashboard...",
+      });
+
+      router.replace("/dashboard");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-950 px-4 py-12 text-white">
-      <div className="w-full max-w-md space-y-8 rounded-2xl border border-neutral-800 bg-neutral-900/80 p-8 shadow-2xl backdrop-blur-md">
-        {/* Header */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold tracking-tight mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-4 py-12 text-white">
+      <div className="w-full max-w-md space-y-8 rounded-2xl border border-neutral-800 bg-neutral-900/80 p-8 shadow-2xl">
+        <header className="text-center">
+          <Link
+            href="/"
+            className="mb-2 inline-flex items-center gap-2 text-2xl font-bold tracking-tight"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10">
               <Activity className="h-6 w-6 text-emerald-400" />
-            </div>
-            <span>Pulse<span className="text-emerald-400">Watch</span></span>
+            </span>
+            <span>
+              Pulse<span className="text-emerald-400">Watch</span>
+            </span>
           </Link>
-          <h2 className="text-xl font-bold text-white mt-4">Welcome back</h2>
-          <p className="mt-1 text-xs text-neutral-400">Sign in to your uptime & incident monitoring dashboard</p>
-        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+          <h1 className="mt-4 text-xl font-bold">Welcome back</h1>
+          <p className="mt-1 text-xs text-neutral-400">
+            Sign in to monitor your services
+          </p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 mb-1">Email Address</label>
+            <label
+              htmlFor="email"
+              className="mb-1 block text-xs font-semibold text-neutral-300"
+            >
+              Email address
+            </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-2.5 h-4 w-4 text-neutral-500" />
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
               <input
+                id="email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 required
                 placeholder="developer@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 py-2.5 pl-9 pr-3 text-sm text-white placeholder-neutral-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                disabled={isSubmitting}
+                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-60"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-neutral-300 mb-1">Password</label>
+            <label
+              htmlFor="password"
+              className="mb-1 block text-xs font-semibold text-neutral-300"
+            >
+              Password
+            </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-2.5 h-4 w-4 text-neutral-500" />
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
               <input
+                id="password"
+                name="password"
                 type="password"
+                autoComplete="current-password"
                 required
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 py-2.5 pl-9 pr-3 text-sm text-white placeholder-neutral-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                disabled={isSubmitting}
+                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-60"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 py-2.5 text-sm font-bold text-neutral-950 hover:bg-emerald-400 transition shadow-md shadow-emerald-500/10"
+            disabled={isSubmitting}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 py-2.5 text-sm font-bold text-neutral-950 shadow-md shadow-emerald-500/10 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <span>Sign In (Static UI)</span>
-            <ArrowRight className="h-4 w-4" />
+            {isSubmitting ? (
+              <>
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              <>
+                Sign in
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
           </button>
         </form>
 
-        {/* Footer Link */}
-        <div className="text-center text-xs text-neutral-400 pt-2 border-t border-neutral-800/80">
-          Don't have an account yet?{" "}
-          <Link href="/register" className="font-semibold text-emerald-400 hover:underline">
-            Create an account
+        <footer className="border-t border-neutral-800/80 pt-4 text-center text-xs text-neutral-400">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/register"
+            className="font-semibold text-emerald-400 hover:underline"
+          >
+            Create account
           </Link>
-        </div>
+        </footer>
       </div>
-    </div>
+    </main>
   );
 }

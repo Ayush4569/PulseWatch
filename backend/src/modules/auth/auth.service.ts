@@ -41,7 +41,7 @@ export const registerUserService = async (
         const insertResult = await client.query(
             `INSERT INTO users (username, email, password_hash)
              VALUES ($1, $2, $3)
-             RETURNING id, username, email, created_at`,
+             RETURNING id, username, email, created_at as "createdAt"`,
             [input.username, input.email, passwordHash]
         );
 
@@ -82,7 +82,7 @@ export const loginUserService = async (
         );
 
         if (result.rows.length === 0) {
-            throw new CustomError(401, "Invalid email or password");
+            throw new CustomError(400, "Invalid email or password");
         }
 
         const dbUser = result.rows[0];
@@ -92,7 +92,7 @@ export const loginUserService = async (
         );
 
         if (!isPasswordValid) {
-            throw new CustomError(401, "Invalid email or password");
+            throw new CustomError(400, "Invalid email or password");
         }
 
         const user: UserResponse = {
@@ -217,7 +217,7 @@ export const getUserProfileService = async (
     const client = await pool.connect();
     try {
         const result = await client.query(
-            "SELECT id, username, email, created_at FROM users WHERE id = $1",
+            `SELECT id,username, email, created_at as "createdAt" FROM users WHERE id = $1`,
             [userId]
         );
 

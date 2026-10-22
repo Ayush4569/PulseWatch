@@ -54,8 +54,8 @@ export const logoutController = asyncHandler(
             await logoutUserService(userId);
         }
 
-        res.cookie("accessToken", "", getClearCookieOptions());
-        res.cookie("refreshToken", "", getClearCookieOptions());
+        res.clearCookie("accessToken",getAccessCookieOptions());
+        res.clearCookie("refreshToken",getRefreshCookieOptions());
 
         return res
             .status(200)
