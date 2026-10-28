@@ -57,38 +57,81 @@ const createMonitorService = async (url: string, interval: number, userId: strin
         client.release();
     }
 }
+
 const getMonitorsService = async (userId: string) => {
-    const client = await pool.connect();
+  const client = await pool.connect();
 
-    try {
-        const result = await client.query(
-            `SELECT
-                id,
-                url,
-                interval_seconds AS interval,
-                is_active AS "isActive",
-                created_at AS "createdAt",
-                updated_at AS "updatedAt"
-             FROM monitors
-             WHERE user_id = $1`,
-            [userId]
-        );
+  try {
+    const result = await client.query(
+      `
+      SELECT
+        m.id,
+        m.url,
+        m.interval_seconds AS interval,
+        m.is_active AS "isActive",
+        m.created_at AS "createdAt",
+        m.updated_at AS "updatedAt",
 
-        return result.rows;
-    } catch (error) {
-        console.error(
-            "Error fetching monitors configuration:",
-            error
-        );
+        CASE
+          WHEN latest.id IS NULL THEN 'WAITING'
+          WHEN latest.success = false THEN 'DOWN'
+          WHEN latest.success = true THEN 'UP'
+          ELSE 'WAITING'
+        END AS "lastStatus",
 
-        throw new CustomError(
-            500,
-            "Error fetching monitors configuration"
-        );
-    } finally {
-        client.release();
-    }
+        latest.latency_ms AS "lastLatencyMs",
+        latest.checked_at AS "lastCheckedAt",
+        latest.error_message AS "lastErrorMessage",
+
+        analytics.uptime AS uptime
+
+      FROM monitors m
+
+      LEFT JOIN LATERAL (
+        SELECT
+          mc.id,
+          mc.success,
+          mc.latency_ms,
+          mc.checked_at,
+          mc.error_message
+        FROM monitor_checks mc
+        WHERE mc.monitor_id = m.id
+        ORDER BY mc.checked_at DESC
+        LIMIT 1
+      ) latest ON true
+
+      LEFT JOIN LATERAL (
+        SELECT
+          (
+            COUNT(*) FILTER (
+              WHERE mc.success = true
+            ) * 100.0 / NULLIF(COUNT(*), 0)
+          )::double precision AS uptime
+        FROM monitor_checks mc
+        WHERE mc.monitor_id = m.id
+          AND mc.checked_at >= NOW() - INTERVAL '24 hours'
+      ) analytics ON true
+
+      WHERE m.user_id = $1
+
+      ORDER BY m.created_at DESC
+      `,
+      [userId]
+    );
+
+    return result.rows;
+  } catch (error) {
+    console.error("Error fetching monitors:", error);
+
+    throw new CustomError(
+      500,
+      "Error fetching monitors"
+    );
+  } finally {
+    client.release();
+  }
 };
+
 const getMonitorDetailsService = async (userId: string, monitorId: string) => {
     const client = await pool.connect();
     try {

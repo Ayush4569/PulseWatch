@@ -24,13 +24,20 @@ export interface Monitor {
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;
-  // Transient/Live fields populated via checks/analytics
   lastStatus?: "UP" | "DOWN" | "DEGRADED" | "WAITING";
   lastLatencyMs?: number | null;
   lastCheckedAt?: string | null;
   lastErrorMessage?: string | null;
   hasActiveIncident?: boolean;
   uptime?: number | null;
+}
+
+export interface CreateMonitor {
+  id: string;
+  url: string;
+  interval: number;
+  createdAt: string;
+  status: "UP" | "DOWN" | "DEGRADED" | "WAITING";
 }
 
 export interface MonitorAnalytics {

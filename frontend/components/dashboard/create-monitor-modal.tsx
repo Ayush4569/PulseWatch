@@ -3,12 +3,14 @@
 import React, { useState } from "react";
 import { X, Globe, Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { Monitor } from "../../lib/types";
+import { CreateMonitor } from "../../lib/types";
+import { createMonitorApi } from "@/lib/api/monitor";
+import { getApiErrorMessage } from "@/lib/api/client";
 
 interface CreateMonitorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onMonitorCreated?: (newMonitor: Monitor) => void;
+  onMonitorCreated?: (newMonitor: CreateMonitor) => void;
 }
 
 export function CreateMonitorModal({ isOpen, onClose, onMonitorCreated }: CreateMonitorModalProps) {
@@ -18,44 +20,39 @@ export function CreateMonitorModal({ isOpen, onClose, onMonitorCreated }: Create
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    const trimmedUrl = url.trim();
-    if (!trimmedUrl) {
-      setError("URL is required.");
-      return;
+
+    try {
+      const trimmedUrl = url.trim();
+      if (!trimmedUrl) {
+        setError("URL is required.");
+        return;
+      }
+
+      if (!trimmedUrl.startsWith("https://")) {
+        setError("URL must start with https:// (e.g. https://api.example.com)");
+        return;
+      }
+      const { data: monitor } = await createMonitorApi({ interval, url });
+      if (onMonitorCreated && monitor) {
+        onMonitorCreated(monitor);
+      }
+      toast.success("Monitor created", {
+        description: `Configured ${monitor?.url} every ${monitor?.interval}s`,
+      });
+    } catch (error) {
+      const message = getApiErrorMessage(error);
+      setError(message);
+      toast.error(message);
+    } finally {
+      setUrl("");
+      setInterval(60);
+      onClose();
     }
 
-    if (!trimmedUrl.startsWith("https://")) {
-      setError("URL must start with https:// (e.g. https://api.example.com)");
-      return;
-    }
-
-    const newMonitor: Monitor = {
-      id: `mon-${Date.now()}`,
-      url: trimmedUrl,
-      interval: Number(interval),
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      lastStatus: "UP",
-      lastLatencyMs: 95,
-      lastCheckedAt: new Date().toISOString(),
-      uptime: 100,
-    };
-
-    toast.success("Monitor created (UI Static)", {
-      description: `Configured ${newMonitor.url} every ${newMonitor.interval}s`,
-    });
-
-    if (onMonitorCreated) {
-      onMonitorCreated(newMonitor);
-    }
-
-    setUrl("");
-    setInterval(60);
-    onClose();
   };
 
   return (
