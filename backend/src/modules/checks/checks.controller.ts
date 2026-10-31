@@ -46,15 +46,14 @@ const getMonitorCheckSeries = asyncHandler(async (req, res) => {
 
     const { monitorId } = req.params as { monitorId: string };
 
-    const range = (req.body.range ) ?? "1h";
-
+    const range = (req.query.range ) ?? "1h";
+    
     const valid = rangeSchema.safeParse(range);
-
     if(!valid.success) {
-        throw new CustomError(401, "In-correct range!")
+        throw new CustomError(400, "In-correct range!")
     }
 
-    const { ...result } = await getMonitorCheckSeriesService(monitorId, userId, valid.data.range);
+    const result  = await getMonitorCheckSeriesService(monitorId, userId, valid.data);
 
     return res.status(200).json(
         new ApiResponse(

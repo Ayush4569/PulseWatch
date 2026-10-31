@@ -93,7 +93,7 @@ const getMonitorCheckService = async (monitorId: string, userId: string, page: n
         const offset = (page - 1) * limit;
 
         const checksResult = await client.query(
-            `         SELECT
+            `SELECT
             id,
             monitor_id AS "monitorId",
             status_code AS "statusCode",

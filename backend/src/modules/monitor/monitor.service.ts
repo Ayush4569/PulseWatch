@@ -109,7 +109,7 @@ const getMonitorsService = async (userId: string) => {
           )::double precision AS uptime
         FROM monitor_checks mc
         WHERE mc.monitor_id = m.id
-          AND mc.checked_at >= NOW() - INTERVAL '24 hours'
+         
       ) analytics ON true
 
       WHERE m.user_id = $1
@@ -142,7 +142,6 @@ const getMonitorDetailsService = async (userId: string, monitorId: string) => {
                 interval_seconds AS interval,
                 is_active AS "isActive",
                 created_at AS "createdAt",
-                updated_at AS "updatedAt"
              FROM monitors
              WHERE user_id = $1 AND id = $2`,
             [userId, monitorId]

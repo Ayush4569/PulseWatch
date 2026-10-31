@@ -10,12 +10,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import { formatLatency } from "../../lib/formatters";
+import { LatencyDataPoint } from "@/lib/types";
 
-interface LatencyDataPoint {
-  time: string;
-  latencyMs: number;
-  success: boolean;
-}
 
 interface LatencyChartProps {
   data: LatencyDataPoint[];
@@ -50,7 +46,7 @@ export function LatencyChart({ data, title = "Latency Performance (ms)" }: Laten
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
             <XAxis
-              dataKey="time"
+              dataKey="checkedAt"
               stroke="#737373"
               fontSize={10}
               tickLine={false}
@@ -69,7 +65,7 @@ export function LatencyChart({ data, title = "Latency Performance (ms)" }: Laten
                   const item = payload[0].payload as LatencyDataPoint;
                   return (
                     <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-2.5 shadow-xl text-xs">
-                      <p className="text-neutral-400 text-[11px]">{item.time}</p>
+                      <p className="text-neutral-400 text-[11px]">{item.checkedAt}</p>
                       <p className="mt-1 font-bold text-white">
                         Latency: <span className="text-emerald-400">{formatLatency(item.latencyMs)}</span>
                       </p>
