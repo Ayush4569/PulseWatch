@@ -26,10 +26,20 @@ export interface ApiErrorBody {
 }
 
 let accessToken: string | null = null;
+type TokenListener = (token:string | null)=> void;
+const tokenListeners = new Set<TokenListener>();
 export const setAccessToken = (token: string | null): void => {
     accessToken = token;
-}
 
+    tokenListeners.forEach((listener)=> listener(token))
+}
+export const getAccessToken = () => accessToken;
+export const subscribeToTokenChanges = (listener:TokenListener)=> {
+    tokenListeners.add(listener);
+    return ()=> {
+        tokenListeners.delete(listener);
+    }
+}
 declare module "axios" {
     interface InternalAxiosRequestConfig {
         _retry?: boolean;

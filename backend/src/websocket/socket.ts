@@ -1,4 +1,4 @@
-import { Server, Socket } from "socket.io";
+import { Server } from "socket.io";
 import { Server as httpServer } from "http";
 import { verifyAccessToken } from "../utils/token.js";
 import { redisSubscriber } from "../config/redis.js";

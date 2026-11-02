@@ -1,5 +1,5 @@
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react'
-import type { User, AuthResponseData } from '@/lib/types'
+import  { createContext, ReactNode, useContext, useEffect, useState } from 'react'
+import type { User } from '@/lib/types'
 import { setAccessToken } from '@/lib/api/client';
 import { getProfileApi, loginApi, logoutApi, registerApi } from '@/lib/api/auth';
 

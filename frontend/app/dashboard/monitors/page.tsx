@@ -6,6 +6,8 @@ import { CreateMonitorModal } from "../../../components/dashboard/create-monitor
 import { MonitorList } from "../../../components/dashboard/monitor-list";
 import { Plus, Radio, RefreshCw } from "lucide-react";
 import { useMonitors } from "@/hooks/useListMonitors";
+import { queryClient } from "@/lib/query-client";
+import { CreateMonitor, Monitor } from "@/lib/types";
 
 export default function MonitorsPage() {
   const {
@@ -18,6 +20,30 @@ export default function MonitorsPage() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] =
     useState<boolean>(false);
+   
+  const handleMonitorCreated = (created: CreateMonitor) => {
+    const monitor: Monitor = {
+      ...created,
+      isActive: true,
+      lastStatus: "WAITING",
+      lastLatencyMs: null,
+      lastCheckedAt: null,
+      lastErrorMessage: null,
+      hasActiveIncident: false,
+      uptime: null,
+    };
+
+
+    queryClient.setQueryData<Monitor[]>(
+      ["monitors"],
+      (previous = []) => [
+        monitor,
+        ...previous.filter((item) => item.id !== monitor.id),
+      ]
+    );
+
+    setIsCreateModalOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white selection:bg-emerald-500 selection:text-black">
@@ -48,9 +74,8 @@ export default function MonitorsPage() {
               title="Refresh monitors"
             >
               <RefreshCw
-                className={`h-3.5 w-3.5 text-neutral-400 ${
-                  isFetching ? "animate-spin" : ""
-                }`}
+                className={`h-3.5 w-3.5 text-neutral-400 ${isFetching ? "animate-spin" : ""
+                  }`}
               />
               <span>
                 {isFetching ? "Refreshing..." : "Refresh"}
@@ -83,10 +108,7 @@ export default function MonitorsPage() {
       <CreateMonitorModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onMonitorCreated={() => {
-          void refetch();
-          setIsCreateModalOpen(false);
-        }}
+        onMonitorCreated={handleMonitorCreated}
       />
     </div>
   );

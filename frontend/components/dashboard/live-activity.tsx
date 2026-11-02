@@ -33,11 +33,11 @@ export function LiveActivity({ checks, getMonitorUrl }: LiveActivityProps) {
       </div>
 
       <div className="mt-3 max-h-64 overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-neutral-800">
-        {checks.slice(0, 15).map((check, index) => {
+        {checks.slice(0, 15).map((check) => {
           const url = getMonitorUrl ? getMonitorUrl(check.monitorId) : `Monitor ${check.monitorId.slice(0, 8)}`;
           return (
             <div
-              key={`${check.monitorId}-${index}`}
+              key={`${check.monitorId}`}
               className={`flex items-center justify-between rounded-lg p-2.5 text-xs transition-all animate-in fade-in slide-in-from-top-1 ${
                 check.success
                   ? "bg-neutral-950/40 hover:bg-neutral-950/80 text-neutral-300"

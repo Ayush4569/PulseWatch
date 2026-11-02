@@ -4,12 +4,11 @@ import { useMemo, useState } from "react";
 import { queryClient } from "@/lib/query-client";
 import { Navbar } from "../../components/layout/navbar";
 import { OverviewStats } from "../../components/dashboard/overview-stats";
-import { MonitorCard } from "../../components/dashboard/monitor-card";
 import { CreateMonitorModal } from "../../components/dashboard/create-monitor-modal";
 import { LiveActivity } from "../../components/dashboard/live-activity";
 import { MOCK_RECENT_CHECKS } from "../../lib/mock-data";
 import type { CreateMonitor, Monitor } from "../../lib/types";
-import { Loader2, Plus, Radio, RefreshCw, Search } from "lucide-react";
+import { Loader2, Plus, Radio, RefreshCw } from "lucide-react";
 import { getApiErrorMessage } from "../../lib/api/client";
 import { useMonitors } from "@/hooks/useListMonitors";
 import { MonitorList } from "@/components/dashboard/monitor-list";
@@ -143,7 +142,7 @@ export default function DashboardPage() {
 
         {/* Initial loading state */}
         {isPending ? (
-          <div className={`h-screen w-screen flex items-center justify-center `}>
+          <div className={`h-screen w-full flex items-center justify-center `}>
             <Loader2
               className="animate-spin text-purple-600 dark:text-fuchsia-400"
               size={50}
