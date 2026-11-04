@@ -1,6 +1,6 @@
 import  { createContext, ReactNode, useContext, useEffect, useState } from 'react'
 import type { User } from '@/lib/types'
-import { setAccessToken } from '@/lib/api/client';
+import { refreshToken, setAccessToken } from '@/lib/api/client';
 import { getProfileApi, loginApi, logoutApi, registerApi } from '@/lib/api/auth';
 
 interface RegisterInput {
@@ -34,6 +34,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         const restoreSession = async () => {
             try {
+                // Populate in-memory access token from refresh cookie if available
+                try {
+                    await refreshToken();
+                } catch {
+                    // Refresh failed (e.g. no cookies or session expired), fall through to getProfileApi
+                }
                 const response = await getProfileApi();
                 if (!cancelled) {
                     setUser(response.data)

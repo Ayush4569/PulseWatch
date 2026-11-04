@@ -14,6 +14,7 @@ export interface MonitorCheckPayload {
     latencyMs: number;
     errorMessage: string | null;
     checkedAt: Date;
+    uptime?: number | null;
 }
 export interface IncidentCreatedPayload {
     monitorId: string;

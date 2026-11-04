@@ -11,76 +11,125 @@ const durationInSeconds: Record<duration, number> = {
     "3d": 3 * 24 * 60 * 60,
 }
 
-const performHealthCheckService = async (monitorId: string) => {
+const performHealthCheckService = async (monitorId: string, jobId: string) => {
     if (!monitorId) {
-        throw new Error("Monitor ID is required")
+        throw new Error("Monitor ID is required");
     }
-    const client = await pool.connect();
+
+    const monitorResult = await pool.query(
+        `
+      SELECT
+        url,
+        user_id AS "userId",
+        is_active AS "isActive"
+      FROM monitors
+      WHERE id = $1
+    `,
+        [monitorId]
+    );
+
+    if (
+        monitorResult.rows.length === 0 ||
+        !monitorResult.rows[0].isActive
+    ) {
+        return null;
+    }
+
+    const { url, userId } = monitorResult.rows[0];
+
+    const startTime = Date.now();
+
+    let statusCode: number | null = null;
+    let success = false;
+    let errorMessage: string | null = null;
+
     try {
-        const monitor = await client.query(
-            `SELECT url, user_id AS "userId", is_active AS "isActive" FROM monitors WHERE id = $1`,
-            [monitorId]
-        );
-        if (monitor.rows.length === 0 || !monitor.rows[0].isActive) {
-            return null;
+        const response = await fetch(url, {
+            method: "GET",
+            signal: AbortSignal.timeout(10000),
+            headers: {
+                "User-Agent": "PulseWatch-Bot/1.0 (+https://pulsewatch.dev)",
+                "Accept": "*/*",
+            },
+        });
+        if (!response.ok) {
+            errorMessage = response.statusText || `HTTP ${response.status}`;
         }
+        statusCode = response.status;
+        success = response.ok;
+        await response.body?.cancel();
+    } catch (error) {
+        errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
+    }
 
-        const { url, userId } = monitor.rows[0];
-        const startTime = Date.now();
+    const latency = Date.now() - startTime;
 
-        let statusCode: number | null = null;
-        let success = false;
-        let errorMessage: string | null = null;
+    const client = await pool.connect();
 
-        try {
-            const response = await fetch(url, {
-                method: "GET",
-                signal: AbortSignal.timeout(10000)
-            });
-
-            statusCode = response.status;
-            success = response.ok;
-
-            if (!response.ok) errorMessage = response.statusText;
-        } catch (error) {
-            errorMessage = error instanceof Error ? error.message : "Unknown error";
-        }
-
-        const latency = Date.now() - startTime;
-
+    try {
         const insertResult = await client.query(
             `
-    INSERT INTO monitor_checks
-        (monitor_id, status_code, latency_ms, success, error_message)
-    VALUES
-        ($1, $2, $3, $4, $5)
-    RETURNING
-        monitor_id AS "monitorId",
-        status_code AS "statusCode",
-        latency_ms AS "latencyMs",
-        success,
-        error_message AS "errorMessage",
-        checked_at AS "checkedAt"
-    `,
-            [monitorId, statusCode, latency, success, errorMessage]
+        INSERT INTO monitor_checks
+        (monitor_id,status_code,latency_ms,success,error_message,job_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (job_id)
+        WHERE job_id IS NOT NULL
+        DO NOTHING
+        RETURNING
+            id,
+            monitor_id AS "monitorId",
+            status_code AS "statusCode",
+            latency_ms AS "latencyMs",
+            success,
+            error_message AS "errorMessage",
+            checked_at AS "checkedAt";
+      `,
+            [monitorId, statusCode, latency, success, errorMessage, jobId]
         );
-        await processIncident({ userId, monitorId, success, errorMessage })
-        return {
-            ...insertResult.rows[0],
-            userId
-        }
-    } catch (error:any) {
-        if (error?.code === "23503") {
-            console.warn(`Monitor ${monitorId} was deleted while check was in-flight. Discarding check.`);
+        const check = insertResult.rows[0];
+
+        if (!check) {
+            console.log(`Check already processed for job ${jobId}`);
             return null;
         }
-        console.error("Failed to perform health check:", error);
+        await processIncident(
+            client,
+            {
+                userId,
+                monitorId,
+                success,
+                errorMessage,
+            });
+
+        const uptimeResult = await client.query(
+            `SELECT (COUNT(*) FILTER (WHERE success = true) * 100.0 / NULLIF(COUNT(*), 0))::double precision AS uptime
+             FROM monitor_checks
+             WHERE monitor_id = $1`,
+            [monitorId]
+        );
+
+        const uptime = uptimeResult.rows[0]?.uptime != null
+            ? Number(uptimeResult.rows[0].uptime)
+            : (success ? 100 : 0);
+
+        return {
+            ...check,
+            userId,
+            uptime,
+        };
+    } catch (error: any) {
+        if (error?.code === "23503") {
+            console.warn(`Monitor ${monitorId} was deleted. Discarding check.`);
+            return null;
+        }
+
+        console.error("Failed to persist health check:", error);
         throw error;
     } finally {
         client.release();
     }
-
-}
+};
 const getMonitorCheckService = async (monitorId: string, userId: string, page: number, limit: number) => {
     const client = await pool.connect();
     try {

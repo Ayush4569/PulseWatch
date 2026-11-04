@@ -161,14 +161,20 @@ export default function MonitorDetailPage({
 
   // Transform backend chart response into LatencyChart's expected format.
   const chartData =
-    series?.points.map((point) => ({
-      checkedAt: new Date(point.checkedAt).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      latencyMs: point.latencyMs,
-      success: point.success,
-    })) ?? [];
+    series?.points.map((point) => {
+      const date = new Date(point.checkedAt);
+      const isMultiDay = range === "24h" || range === "3d";
+      return {
+        checkedAt: isMultiDay
+          ? date.toLocaleDateString([], { month: "short", day: "numeric" }) +
+            " " +
+            date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        rawTime: date.toLocaleString(),
+        latencyMs: point.latencyMs,
+        success: point.success,
+      };
+    }) ?? [];
 
   const checks = checksData?.checks ?? [];
   const pagination = checksData?.pagination;

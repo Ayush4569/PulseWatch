@@ -56,7 +56,8 @@ export interface MonitorAnalytics {
 export type Duration = "1h"| "6h" | "24h" | "3d"
 export interface LatencyDataPoint {
   checkedAt: string;
-  statusCode?:string;
+  rawTime?: string;
+  statusCode?: string;
   latencyMs: number;
   success: boolean;
 }
@@ -114,6 +115,7 @@ export interface MonitorCheckEvent {
   latencyMs: number;
   errorMessage: string | null;
   checkedAt: string;
+  uptime?: number | null;
 }
 
 export interface IncidentCreatedEvent {

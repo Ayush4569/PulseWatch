@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuthContext } from "@/context/auth-context";
-import { getAccessToken, subscribeToTokenChanges } from "@/lib/api/client";
+import { getAccessToken, refreshToken, subscribeToTokenChanges } from "@/lib/api/client";
 import {
   IncidentCreatedEvent,
   IncidentResolvedEvent,
@@ -71,7 +71,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     setStatus("connecting");
 
     const newSocket = io(socketUrl, {
-      auth: { token },
+      auth: (cb) => {
+        cb({ token: getAccessToken() });
+      },
+      withCredentials: true,
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: Infinity,
@@ -93,9 +96,19 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setStatus("disconnected");
     });
 
-    newSocket.on("connect_error", (error) => {
+    newSocket.on("connect_error", async (error) => {
       console.error("Socket connection error:", error.message);
       setStatus("disconnected");
+      if (
+        error.message.includes("Authentication error") ||
+        error.message.includes("Token")
+      ) {
+        try {
+          await refreshToken();
+        } catch {
+          // Token refresh failed
+        }
+      }
     });
 
     // Token refresh sync
@@ -105,7 +118,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         setStatus("disconnected");
         return;
       }
-      newSocket.auth = { token: newToken };
+      newSocket.auth = (cb: (data: object) => void) => cb({ token: newToken });
       if (newSocket.connected) {
         newSocket.disconnect();
       }
@@ -120,6 +133,14 @@ export function SocketProvider({ children }: { children: ReactNode }) {
           if (monitor.id !== event.monitorId) return monitor;
           return {
             ...monitor,
+            uptime:
+              event.uptime !== undefined
+                ? event.uptime
+                : monitor.uptime !== null && monitor.uptime !== undefined
+                ? monitor.uptime
+                : event.success
+                ? 100
+                : 0,
             lastStatus: event.success
               ? monitor.hasActiveIncident
                 ? "DOWN"

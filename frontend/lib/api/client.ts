@@ -80,7 +80,7 @@ apiClient.interceptors.request.use(
     }
 )
 let refreshPromise: Promise<string> | null = null;
-const refreshToken = async (): Promise<string> => {
+export const refreshToken = async (): Promise<string> => {
     if (!refreshPromise) {
         refreshPromise = (async () => {
             try {

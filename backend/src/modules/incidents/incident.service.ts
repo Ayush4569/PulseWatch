@@ -1,3 +1,4 @@
+import type { PoolClient } from "pg";
 import pool from "../../db/client.js";
 import { CustomError } from "../../utils/apiError.js";
 import { publishIncidentCreated, publishIncidentResolved } from "../../websocket/publisher.js";
@@ -11,13 +12,14 @@ interface Incident {
 
 const MAX_FAILURES = 3;
 
-const processIncident = async ({
+const processIncident = async (
+  client:PoolClient,
+  {
   userId,
   monitorId,
   success,
   errorMessage,
 }: Incident) => {
-  const client = await pool.connect();
 
   const reason = errorMessage ?? "Unknown error";
 
@@ -82,6 +84,7 @@ const processIncident = async ({
     const insertResult = await client.query(
       `INSERT INTO incidents (monitor_id, failure_reason)
        VALUES ($1, $2)
+       ON CONFLICT (monitor_id) WHERE status = 'OPEN' DO NOTHING
        RETURNING id, started_at AS "startedAt"`,
       [monitorId, reason]
     );
@@ -99,8 +102,6 @@ const processIncident = async ({
   } catch (error) {
     console.error("Error processing incidents:", error);
     throw error;
-  } finally {
-    client.release();
   }
 };
 

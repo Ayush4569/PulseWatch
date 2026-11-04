@@ -51,6 +51,7 @@ export function LatencyChart({ data, title = "Latency Performance (ms)" }: Laten
               fontSize={10}
               tickLine={false}
               axisLine={false}
+              minTickGap={35}
             />
             <YAxis
               stroke="#737373"
@@ -65,7 +66,7 @@ export function LatencyChart({ data, title = "Latency Performance (ms)" }: Laten
                   const item = payload[0].payload as LatencyDataPoint;
                   return (
                     <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-2.5 shadow-xl text-xs">
-                      <p className="text-neutral-400 text-[11px]">{item.checkedAt}</p>
+                      <p className="text-neutral-400 text-[11px]">{item.rawTime || item.checkedAt}</p>
                       <p className="mt-1 font-bold text-white">
                         Latency: <span className="text-emerald-400">{formatLatency(item.latencyMs)}</span>
                       </p>
@@ -87,6 +88,8 @@ export function LatencyChart({ data, title = "Latency Performance (ms)" }: Laten
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#latencyGradient)"
+              dot={data.length === 1 ? { r: 4, fill: "#10b981", strokeWidth: 0 } : false}
+              activeDot={{ r: 5, fill: "#10b981" }}
             />
           </AreaChart>
         </ResponsiveContainer>

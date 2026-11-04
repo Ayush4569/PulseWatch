@@ -20,7 +20,18 @@ export const initalizeSocket = (server: httpServer) => {
 
     // authenticate user
     io.use((socket, next) => {
-        const token = socket.handshake.auth?.token;
+        let token = socket.handshake.auth?.token;
+        if (!token && socket.handshake.headers.cookie) {
+            const rawCookies = socket.handshake.headers.cookie.split(";");
+            for (const c of rawCookies) {
+                const [k, ...v] = c.trim().split("=");
+                if (k === "accessToken") {
+                    token = decodeURIComponent(v.join("="));
+                    break;
+                }
+            }
+        }
+
         if (!token) {
             return next(new Error('Authentication error: Token required'));
         }
