@@ -29,6 +29,7 @@ export interface SocketContextValue {
   status: SocketStatus;
   liveChecks: MonitorCheckEvent[];
   clearLiveChecks: () => void;
+  removeMonitorChecks: (monitorId: string) => void;
 }
 
 const SocketContext = createContext<SocketContextValue | null>(null);
@@ -44,6 +45,25 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const clearLiveChecks = useCallback(() => {
     setLiveChecks([]);
   }, []);
+
+  const removeMonitorChecks = useCallback((monitorId: string) => {
+    setLiveChecks((prev) => prev.filter((check) => check.monitorId !== monitorId));
+  }, []);
+
+  // Listen for monitor deletion events across the app to purge live checks
+  useEffect(() => {
+    const handleMonitorDeleted = (e: Event) => {
+      const customEvent = e as CustomEvent<{ monitorId: string }>;
+      if (customEvent.detail?.monitorId) {
+        removeMonitorChecks(customEvent.detail.monitorId);
+      }
+    };
+
+    window.addEventListener("monitor:deleted", handleMonitorDeleted);
+    return () => {
+      window.removeEventListener("monitor:deleted", handleMonitorDeleted);
+    };
+  }, [removeMonitorChecks]);
 
   useEffect(() => {
     if (loading) return;
@@ -172,7 +192,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       );
       const monitorLabel =
         affectedMonitor?.url || `Monitor ${event.monitorId.slice(0, 8)}`;
-      toast.error(`⚠️ Incident Detected: ${monitorLabel}`, {
+      toast.error(`Incident Detected: ${monitorLabel}`, {
+        id: `incident-${event.incidentId}`,
         description: event.failureReason,
         duration: 8000,
       });
@@ -197,7 +218,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       );
       const monitorLabel =
         affectedMonitor?.url || `Monitor ${event.monitorId.slice(0, 8)}`;
-      toast.success(`✅ Incident Resolved: ${monitorLabel}`, {
+      toast.success(`Incident Resolved: ${monitorLabel}`, {
+        id: `incident-${event.incidentId}`,
         description: `Endpoint recovered at ${new Date(
           event.resolvedAt
         ).toLocaleTimeString()}`,
@@ -239,6 +261,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     status,
     liveChecks,
     clearLiveChecks,
+    removeMonitorChecks,
   };
 
   return (

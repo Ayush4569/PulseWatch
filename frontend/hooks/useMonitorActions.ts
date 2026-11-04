@@ -67,6 +67,13 @@ export const useDeleteMonitor = () => {
         old.filter((m) => m.id !== monitorId)
       );
 
+      // Immediately notify SocketProvider to purge live checks for this monitor
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("monitor:deleted", { detail: { monitorId } })
+        );
+      }
+
       return { previousMonitors };
     },
     onError: (err, _variables, context) => {

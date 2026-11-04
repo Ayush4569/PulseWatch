@@ -1,98 +1,206 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, ShieldCheck, Zap, Radio, ArrowRight, Server } from "lucide-react";
+import {
+  Activity,
+  ShieldCheck,
+  Zap,
+  Radio,
+  ArrowRight,
+  Server,
+  CheckCircle2,
+  Lock,
+} from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useAuthContext } from "@/context/auth-context";
 
 export default function LandingPage() {
+  const { isAuthenticated, loading } = useAuthContext();
+
   return (
-    <div className="min-h-screen bg-neutral-950 text-white selection:bg-emerald-500 selection:text-black">
-      {/* Background Glow */}
-      <div className="absolute top-0 left-1/2 -z-10 h-[500px] w-full max-w-7xl -translate-x-1/2 opacity-20 blur-[120px] bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-500 pointer-events-none" />
+    <div className="min-h-screen bg-background text-foreground selection:bg-emerald-500 selection:text-black transition-colors duration-200 overflow-x-hidden">
+      {/* Background Animated Glow */}
+      <div className="absolute top-0 left-1/2 -z-10 h-[550px] w-full max-w-7xl -translate-x-1/2 opacity-25 dark:opacity-25 blur-[120px] bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-500 pointer-events-none animate-pulse-glow" />
 
       {/* Header */}
-      <header className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-        <div className="flex items-center gap-2 text-xl font-bold tracking-tight">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-            <Activity className="h-5 w-5 text-emerald-400" />
+      <header className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 border-b border-border/40 animate-fade-in-up">
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 text-xl font-bold tracking-tight text-foreground group"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 transition-transform group-hover:scale-105">
+            <Activity className="h-5 w-5 animate-pulse" />
           </div>
-          <span>Pulse<span className="text-emerald-400">Watch</span></span>
-        </div>
+          <span>
+            Pulse<span className="text-emerald-500">Watch</span>
+          </span>
+        </Link>
 
-        <div className="flex items-center gap-4">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-neutral-300 hover:text-white transition"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-neutral-950 hover:bg-emerald-400 transition"
-          >
-            Get Started
-          </Link>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+
+          {loading ? (
+            <div className="h-9 w-28 rounded-lg bg-muted/60 animate-pulse" />
+          ) : isAuthenticated ? (
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-xs sm:text-sm font-semibold text-neutral-950 hover:bg-emerald-400 transition shadow-sm active:scale-95"
+            >
+              <span>Go to Dashboard</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/login"
+                className="text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition px-3 py-1.5"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-lg bg-emerald-500 px-4 py-2 text-xs sm:text-sm font-semibold text-neutral-950 hover:bg-emerald-400 transition shadow-sm active:scale-95"
+              >
+                Get Started
+              </Link>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Hero Section */}
-      <main className="mx-auto max-w-7xl px-6 pt-20 pb-24 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-semibold text-emerald-400 mb-8">
-          <Radio className="h-3.5 w-3.5 animate-pulse" />
+      <main className="mx-auto max-w-7xl px-6 pt-16 sm:pt-20 pb-24 text-center">
+        {/* Animated Badge Pill */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-8 shadow-xs animate-fade-in-up">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
           <span>Real-time WebSocket Monitoring Platform</span>
         </div>
 
-        <h1 className="mx-auto max-w-4xl text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
-          Real-time Uptime & Incident Monitoring for Developers
+        {/* Animated Headline with Gradient Shimmer */}
+        <h1 className="mx-auto max-w-4xl text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl text-foreground leading-[1.12] animate-fade-in-up delay-150">
+          Real-time{" "}
+          <span className="bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 bg-clip-text text-transparent animate-gradient-x">
+            Uptime & Incident
+          </span>{" "}
+          Monitoring for Developers
         </h1>
 
-        <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-neutral-400">
-          Monitor HTTP endpoints, track latency in real-time with WebSockets, receive instant incident notifications, and ensure maximum reliability for your web infrastructure.
+        {/* Animated Subtitle */}
+        <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed animate-fade-in-up delay-300">
+          Monitor HTTP endpoints with precision, stream millisecond response latency via WebSockets, detect outages instantly with automated alerts, and maximize service reliability.
         </p>
 
-        <div className="mt-10 flex items-center justify-center gap-4">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3.5 text-sm font-bold text-neutral-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition"
-          >
-            <span>View Dashboard Preview</span>
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
-            href="/login"
-            className="rounded-xl border border-neutral-800 bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white hover:bg-neutral-800 transition"
-          >
-            Sign In to Account
-          </Link>
+        {/* Animated Call-to-Actions */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4 animate-fade-in-up delay-400">
+          {loading ? (
+            <div className="h-12 w-48 rounded-xl bg-muted/60 animate-pulse" />
+          ) : isAuthenticated ? (
+            /* Authenticated user: Only Go to Dashboard button */
+            <Link
+              href="/dashboard"
+              className="group flex items-center gap-2 rounded-xl bg-emerald-500 px-7 py-3.5 text-sm font-bold text-neutral-950 shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              <span>Go to Dashboard</span>
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          ) : (
+            /* Unauthenticated user: Get Started + Sign In */
+            <>
+              <Link
+                href="/register"
+                className="group flex items-center gap-2 rounded-xl bg-emerald-500 px-7 py-3.5 text-sm font-bold text-neutral-950 shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                <span>Get Started Free</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-xl border border-border bg-card/80 backdrop-blur-xs px-6 py-3.5 text-sm font-semibold text-foreground hover:bg-accent hover:border-border/80 transition-all shadow-xs"
+              >
+                Sign In to Account
+              </Link>
+            </>
+          )}
         </div>
 
-        {/* Feature Grid */}
-        <div className="mt-24 grid grid-cols-1 gap-6 sm:grid-cols-3 text-left">
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 backdrop-blur-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mb-4">
+        {/* Live Mockup / Interactive Preview Element */}
+        <div className="mt-16 mx-auto max-w-3xl rounded-2xl border border-border bg-card/70 p-6 shadow-xl backdrop-blur-md animate-fade-in-up delay-500 text-left">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
+            <div className="flex items-center gap-3">
+              <div>
+                <p className="font-mono text-xs font-bold text-foreground">
+                  https://api.pulsewatch.dev/v1/health
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Monitored every 30 seconds · Global HTTP Probe
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                99.98% Uptime
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-4 text-center">
+            <div className="rounded-lg bg-muted/40 p-3">
+              <span className="text-[11px] text-muted-foreground uppercase font-medium">Status</span>
+              <p className="mt-1 font-mono text-sm font-bold text-emerald-500">200 OK</p>
+            </div>
+            <div className="rounded-lg bg-muted/40 p-3">
+              <span className="text-[11px] text-muted-foreground uppercase font-medium">Latency</span>
+              <p className="mt-1 font-mono text-sm font-bold text-foreground">34 ms</p>
+            </div>
+            <div className="rounded-lg bg-muted/40 p-3">
+              <span className="text-[11px] text-muted-foreground uppercase font-medium">WebSocket</span>
+              <p className="mt-1 text-sm font-bold text-emerald-500 flex items-center justify-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature Grid with Staggered Entrance and Hover Elevation */}
+        <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-3 text-left">
+          <div className="rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-xs shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-emerald-500/40 transition-all duration-300 animate-fade-in-up delay-500 group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 mb-4 transition-transform group-hover:scale-110">
               <Zap className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-bold text-white">WebSocket Real-Time Checks</h3>
-            <p className="mt-2 text-sm text-neutral-400">
+            <h3 className="text-lg font-bold text-foreground group-hover:text-emerald-500 transition-colors">
+              WebSocket Real-Time Checks
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
               Instant monitor status updates streamed over WebSockets without manual page reloads or polling spam.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 backdrop-blur-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 mb-4">
+          <div className="rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-xs shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-blue-500/40 transition-all duration-300 animate-fade-in-up delay-600 group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-500 mb-4 transition-transform group-hover:scale-110">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-bold text-white">Instant Incident Alerts</h3>
-            <p className="mt-2 text-sm text-neutral-400">
+            <h3 className="text-lg font-bold text-foreground group-hover:text-blue-500 transition-colors">
+              Instant Incident Alerts
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
               Automatic incident creation on consecutive check failures, with live resolution tracking when services recover.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 backdrop-blur-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 mb-4">
+          <div className="rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-xs shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-amber-500/40 transition-all duration-300 animate-fade-in-up delay-600 group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 mb-4 transition-transform group-hover:scale-110">
               <Server className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-bold text-white">Latency & Uptime Metrics</h3>
-            <p className="mt-2 text-sm text-neutral-400">
+            <h3 className="text-lg font-bold text-foreground group-hover:text-amber-500 transition-colors">
+              Latency & Uptime Metrics
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
               24-hour historical uptime percentage, average response latency, and time-series performance charts.
             </p>
           </div>

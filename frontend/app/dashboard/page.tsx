@@ -1,17 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { queryClient } from "@/lib/query-client";
-import { Navbar } from "../../components/layout/navbar";
-import { OverviewStats } from "../../components/dashboard/overview-stats";
-import { CreateMonitorModal } from "../../components/dashboard/create-monitor-modal";
-import { LiveActivity } from "../../components/dashboard/live-activity";
-import type { CreateMonitor, Monitor } from "../../lib/types";
-import { Loader2, Plus, Radio, RefreshCw } from "lucide-react";
-import { getApiErrorMessage } from "../../lib/api/client";
+import { Navbar } from "@/components/layout/navbar";
+import { OverviewStats } from "@/components/dashboard/overview-stats";
+import { CreateMonitorModal } from "@/components/dashboard/create-monitor-modal";
+import { LiveActivity } from "@/components/dashboard/live-activity";
+import type { CreateMonitor, Monitor } from "@/lib/types";
+import { Plus, Radio, RefreshCw } from "lucide-react";
 import { useMonitors } from "@/hooks/useListMonitors";
 import { MonitorList } from "@/components/dashboard/monitor-list";
 import { useSocket } from "@/socket/socket-provider";
+import { queryClient } from "@/lib/query-client";
+import { DashboardPageSkeleton } from "@/components/dashboard/dashboard-skeletons";
 
 export default function DashboardPage() {
   const { liveChecks } = useSocket();
@@ -25,7 +25,6 @@ export default function DashboardPage() {
   } = useMonitors();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
 
   const aggregatedStats = useMemo(() => {
     const uptimeValues = monitors
@@ -47,18 +46,31 @@ export default function DashboardPage() {
       avgUptime:
         uptimeValues.length > 0
           ? uptimeValues.reduce((sum, value) => sum + value, 0) /
-          uptimeValues.length
-          : 0,
+            uptimeValues.length
+          : null,
       avgLatencyMs:
         latencyValues.length > 0
           ? latencyValues.reduce((sum, value) => sum + value, 0) /
-          latencyValues.length
-          : 0,
+            latencyValues.length
+          : null,
       activeIncidentsCount: monitors.filter(
         (monitor) => monitor.hasActiveIncident
       ).length,
     };
   }, [monitors]);
+
+  // Build a lookup map of active monitors and filter out checks of deleted monitors
+  const activeMonitorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const monitor of monitors) {
+      map.set(monitor.id, monitor.url);
+    }
+    return map;
+  }, [monitors]);
+
+  const activeLiveChecks = useMemo(() => {
+    return liveChecks.filter((check) => activeMonitorMap.has(check.monitorId));
+  }, [liveChecks, activeMonitorMap]);
 
   const handleMonitorCreated = (created: CreateMonitor) => {
     const monitor: Monitor = {
@@ -72,7 +84,6 @@ export default function DashboardPage() {
       uptime: null,
     };
 
-
     queryClient.setQueryData<Monitor[]>(
       ["monitors"],
       (previous = []) => [
@@ -84,56 +95,52 @@ export default function DashboardPage() {
     setIsCreateModalOpen(false);
   };
 
-
-  const getMonitorUrlById = (id: string) => {
-    const found = monitors.find((monitor) => monitor.id === id);
-    return found ? found.url : `Monitor ${id}`;
-  };
-
-  const errorMessage = error
-    ? getApiErrorMessage(error)
-    : null;
+  if (isPending) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar onOpenCreateModal={() => setIsCreateModalOpen(true)} />
+        <DashboardPageSkeleton />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white selection:bg-emerald-500 selection:text-black">
-      <Navbar
-        onOpenCreateModal={() => setIsCreateModalOpen(true)}
-      />
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+      <Navbar onOpenCreateModal={() => setIsCreateModalOpen(true)} />
 
-      <main className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8 animate-in fade-in duration-200">
         {/* Header */}
-        <div className="flex flex-col gap-4 border-b border-neutral-800/80 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-white">
+            <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground">
+              <Radio className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />
               <span>Monitoring Overview</span>
-              <span className="flex h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
             </h1>
-
-            <p className="mt-1 text-xs text-neutral-400">
-              Live uptime, latency, and incident metrics across
-              all your endpoints.
+            <p className="mt-1 text-xs text-muted-foreground">
+              Live uptime, latency, and incident metrics across your web infrastructure.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
+              type="button"
               onClick={() => void refetch()}
               disabled={isFetching}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:opacity-50"
-              title="Refresh data"
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent disabled:opacity-50 active:scale-95"
+              title="Refresh all metrics"
             >
               <RefreshCw
-                className={`h-3.5 w-3.5 text-neutral-400 ${isFetching ? "animate-spin" : ""
-                  }`}
+                className={`h-3.5 w-3.5 text-muted-foreground ${
+                  isFetching ? "animate-spin" : ""
+                }`}
               />
-              <span>
-                {isFetching ? "Refreshing..." : "Refresh"}
-              </span>
+              <span>{isFetching ? "Refreshing..." : "Refresh"}</span>
             </button>
 
             <button
+              type="button"
               onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-neutral-950 shadow-sm transition hover:bg-emerald-400"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 dark:bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-white dark:text-neutral-950 transition hover:bg-emerald-500 dark:hover:bg-emerald-400 shadow-sm active:scale-95"
             >
               <Plus className="h-4 w-4" />
               <span>New Monitor</span>
@@ -141,68 +148,40 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Initial loading state */}
-        {isPending ? (
-          <div className={`h-screen w-full flex items-center justify-center `}>
-            <Loader2
-              className="animate-spin text-purple-600 dark:text-fuchsia-400"
-              size={50}
-            />
+        {/* Overview Stats */}
+        <OverviewStats
+          totalMonitors={aggregatedStats.total}
+          avgUptime={aggregatedStats.avgUptime}
+          activeIncidentsCount={aggregatedStats.activeIncidentsCount}
+          avgLatencyMs={aggregatedStats.avgLatencyMs}
+        />
+
+        {/* Real-time Live Activity Stream (filtered for active monitors only) */}
+        <LiveActivity
+          checks={activeLiveChecks}
+          getMonitorUrl={(id) => activeMonitorMap.get(id) || ""}
+        />
+
+        {/* Monitored Endpoints Grid */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-foreground">
+              Monitored Endpoints
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              {monitors.length} total
+            </span>
           </div>
-        ) : error ? (
-          /* Error state */
-          <div className="flex items-center justify-between gap-4 rounded-lg border border-red-900 bg-red-950/30 p-4">
-            <p className="text-sm text-red-300">
-              {errorMessage || "Failed to load monitors."}
-            </p>
 
-            <button
-              onClick={() => void refetch()}
-              disabled={isFetching}
-              className="shrink-0 text-sm font-medium text-emerald-400 hover:text-emerald-300 disabled:opacity-50"
-            >
-              {isFetching ? "Retrying..." : "Try again"}
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* Overview statistics */}
-            <OverviewStats
-              totalMonitors={aggregatedStats.total}
-              avgUptime={aggregatedStats.avgUptime}
-              activeIncidentsCount={aggregatedStats.activeIncidentsCount}
-              avgLatencyMs={aggregatedStats.avgLatencyMs}
-            />
-
-            {/* Main grid */}
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-              {/* Monitors */}
-              <div className="min-w-0 space-y-4 lg:col-span-2">
-                <h2 className="flex items-center gap-2 text-base font-bold text-white">
-                  <Radio className="h-4 w-4 text-emerald-400" />
-                  <span>Active Endpoints ({monitors.length})</span>
-                </h2>
-
-                <MonitorList
-                  monitors={monitors}
-                  isPending={isPending}
-                  error={error}
-                  onRetry={() => void refetch()}
-                  onCreateMonitor={() => setIsCreateModalOpen(true)}
-                  columns="dashboard"
-                />
-              </div>
-
-              {/* Recent activity */}
-              <div className="min-w-0 self-end ">
-                <LiveActivity
-                  checks={liveChecks}
-                  getMonitorUrl={getMonitorUrlById}
-                />
-              </div>
-            </div>
-          </>
-        )}
+          <MonitorList
+            monitors={monitors}
+            isPending={isPending}
+            error={error}
+            onRetry={() => void refetch()}
+            onCreateMonitor={() => setIsCreateModalOpen(true)}
+            columns="dashboard"
+          />
+        </section>
       </main>
 
       <CreateMonitorModal

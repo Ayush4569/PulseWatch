@@ -6,6 +6,7 @@ import { Navbar } from "../../../components/layout/navbar";
 import { formatTimeAgo } from "../../../lib/formatters";
 import { useIncidents } from "@/hooks/useIncidents";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { IncidentRowSkeleton } from "@/components/dashboard/dashboard-skeletons";
 import {
   ShieldAlert,
   CheckCircle2,
@@ -14,7 +15,7 @@ import {
   RefreshCw,
   Clock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
 
 const PAGE_SIZE = 10;
@@ -59,19 +60,21 @@ export default function IncidentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white selection:bg-emerald-500 selection:text-black">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
       <Navbar />
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-800/80 pb-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-5">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              <ShieldAlert className="h-6 w-6 text-red-400" />
+            <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-500">
+                <ShieldAlert className="h-5 w-5" />
+              </span>
               <span>Incidents Log</span>
             </h1>
-            <p className="mt-1 text-xs text-neutral-400">
-              Real-time incident detection and resolution tracking powered by health checks.
+            <p className="mt-1 text-xs text-muted-foreground">
+              Real-time incident detection and automated recovery tracking powered by health checks.
             </p>
           </div>
 
@@ -80,27 +83,27 @@ export default function IncidentsPage() {
             <button
               onClick={() => void handleRefresh()}
               disabled={isFetching}
-              className="flex items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent disabled:opacity-50 shadow-sm"
               title="Refresh incidents"
             >
               <RefreshCw
-                className={`h-3.5 w-3.5 text-neutral-400 ${
-                  isFetching ? "animate-spin" : ""
+                className={`h-3.5 w-3.5 text-muted-foreground ${
+                  isFetching ? "animate-spin text-emerald-500" : ""
                 }`}
               />
               <span>{isFetching ? "Refreshing..." : "Refresh"}</span>
             </button>
 
             {/* Tab Switcher */}
-            <div className="flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900 p-1">
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-card/60 p-1">
               <button
                 onClick={() => {
                   setActiveTab("ACTIVE");
                 }}
                 className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                   activeTab === "ACTIVE"
-                    ? "bg-red-500/10 text-red-400 border border-red-500/30"
-                    : "text-neutral-400 hover:text-white"
+                    ? "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <AlertTriangle className="h-3.5 w-3.5" />
@@ -112,8 +115,8 @@ export default function IncidentsPage() {
                 }}
                 className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                   activeTab === "RESOLVED"
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                    : "text-neutral-400 hover:text-white"
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
@@ -125,42 +128,43 @@ export default function IncidentsPage() {
 
         {/* Content Area */}
         {isPending ? (
-          <div className="flex min-h-64 flex-col items-center justify-center gap-3">
-            <RefreshCw className="h-7 w-7 animate-spin text-emerald-400" />
-            <p className="text-sm text-neutral-400">Loading incidents...</p>
+          <div className="space-y-3">
+            <IncidentRowSkeleton />
+            <IncidentRowSkeleton />
+            <IncidentRowSkeleton />
           </div>
         ) : error ? (
-          <div className="rounded-xl border border-red-900 bg-red-950/30 p-6 text-center space-y-3">
-            <p className="text-sm text-red-300">
+          <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-6 text-center space-y-3">
+            <p className="text-sm font-medium text-red-600 dark:text-red-400">
               {getApiErrorMessage(error) || "Unable to load incidents."}
             </p>
             <button
               onClick={() => void handleRefresh()}
-              className="inline-flex items-center gap-2 rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/30 transition"
+              className="inline-flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/20 transition"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Try again
             </button>
           </div>
         ) : displayedIncidents.length === 0 ? (
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-12 text-center space-y-3">
+          <div className="rounded-xl border border-border bg-card/60 p-12 text-center space-y-3 shadow-xs">
             {isCurrentActive ? (
               <>
-                <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-400" />
-                <h3 className="text-base font-semibold text-white">
+                <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-500" />
+                <h3 className="text-base font-semibold text-foreground">
                   No Active Incidents
                 </h3>
-                <p className="text-xs text-neutral-400 max-w-sm mx-auto">
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                   All endpoints are operating normally. When a monitor experiences 3 consecutive failures, an active incident will trigger here.
                 </p>
               </>
             ) : (
               <>
-                <Clock className="mx-auto h-10 w-10 text-neutral-500" />
-                <h3 className="text-base font-semibold text-white">
+                <Clock className="mx-auto h-10 w-10 text-muted-foreground/60" />
+                <h3 className="text-base font-semibold text-foreground">
                   No Resolved Incidents
                 </h3>
-                <p className="text-xs text-neutral-400 max-w-sm mx-auto">
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                   Past incident recoveries will be archived and viewable here.
                 </p>
               </>
@@ -173,48 +177,48 @@ export default function IncidentsPage() {
               return (
                 <div
                   key={incident.id}
-                  className={`rounded-xl border p-5 shadow-lg transition-all ${
+                  className={`rounded-xl border p-5 shadow-xs transition-all hover:shadow-md ${
                     isOpen
-                      ? "border-red-800/80 bg-red-950/20"
-                      : "border-neutral-800 bg-neutral-900/60"
+                      ? "border-red-500/40 bg-red-500/5 dark:bg-red-950/20"
+                      : "border-border bg-card"
                   }`}
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
                         <span
-                          className={`flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                          className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
                             isOpen
-                              ? "bg-red-500/10 text-red-400 border-red-500/30"
-                              : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                              ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30"
+                              : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
                           }`}
                         >
                           <span
                             className={`h-2 w-2 rounded-full ${
                               isOpen
                                 ? "bg-red-500 animate-ping"
-                                : "bg-emerald-400"
+                                : "bg-emerald-500"
                             }`}
                           />
                           {isOpen ? "ACTIVE INCIDENT" : "RESOLVED"}
                         </span>
 
                         {incident.monitorUrl && (
-                          <span className="font-mono text-xs text-neutral-300 font-medium">
+                          <span className="font-mono text-xs font-medium text-foreground">
                             {incident.monitorUrl}
                           </span>
                         )}
 
-                        <span className="text-[11px] text-neutral-500">
-                          (ID: <code className="text-neutral-400 font-mono">{incident.monitorId.slice(0, 8)}</code>)
+                        <span className="text-[11px] text-muted-foreground">
+                          (ID: <code className="font-mono text-foreground/80">{incident.monitorId.slice(0, 8)}</code>)
                         </span>
                       </div>
 
-                      <h3 className="text-base font-bold text-white mt-2">
+                      <h3 className="text-base font-bold text-foreground mt-1">
                         {incident.failureReason}
                       </h3>
 
-                      <p className="text-xs text-neutral-400">
+                      <p className="text-xs text-muted-foreground">
                         Started {formatTimeAgo(incident.startedAt)}
                         {incident.resolvedAt &&
                           ` · Resolved ${formatTimeAgo(incident.resolvedAt)}`}
@@ -223,7 +227,7 @@ export default function IncidentsPage() {
 
                     <Link
                       href={`/dashboard/monitors/${incident.monitorId}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition shrink-0"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition shrink-0"
                     >
                       <span>View Monitor</span>
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -235,8 +239,8 @@ export default function IncidentsPage() {
 
             {/* Pagination Controls */}
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex flex-col gap-3 border-t border-neutral-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-neutral-500">
+              <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
                   Showing {(currentPage - 1) * PAGE_SIZE + 1} -{" "}
                   {Math.min(currentPage * PAGE_SIZE, pagination.total)} of{" "}
                   {pagination.total} incidents
@@ -246,13 +250,13 @@ export default function IncidentsPage() {
                   <button
                     disabled={currentPage <= 1}
                     onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                    className="inline-flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
                     Previous
                   </button>
 
-                  <span className="text-xs text-neutral-400">
+                  <span className="text-xs text-muted-foreground">
                     {currentPage} / {pagination.totalPages}
                   </span>
 
@@ -263,7 +267,7 @@ export default function IncidentsPage() {
                         Math.min(p + 1, pagination.totalPages)
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
                   >
                     Next
                     <ChevronRight className="h-3.5 w-3.5" />

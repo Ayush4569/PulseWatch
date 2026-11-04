@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Activity,
   Mail,
@@ -15,9 +15,12 @@ import { toast } from "sonner";
 
 import { useAuthContext } from "@/context/auth-context";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { GuestRoute } from "@/components/auth/guest-route";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuthContext();
 
   const [email, setEmail] = useState("");
@@ -35,10 +38,11 @@ export default function LoginPage() {
       await login({ email, password });
 
       toast.success("Welcome back!", {
-        description: "Login successful. Redirecting to dashboard...",
+        description: "Login successful. Redirecting...",
       });
 
-      router.replace("/dashboard");
+      const redirect = searchParams.get("redirect") || "/dashboard";
+      router.replace(redirect);
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -47,24 +51,29 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-4 py-12 text-white">
-      <div className="w-full max-w-md space-y-8 rounded-2xl border border-neutral-800 bg-neutral-900/80 p-8 shadow-2xl">
+    <main className="relative flex min-h-screen items-center justify-center bg-background px-4 py-12 text-foreground transition-colors duration-200">
+      {/* Top right theme toggle */}
+      <div className="absolute right-6 top-6">
+        <ThemeToggle />
+      </div>
+
+      <div className="w-full max-w-md space-y-8 rounded-2xl border border-border bg-card p-8 shadow-xl animate-in fade-in duration-300">
         <header className="text-center">
           <Link
             href="/"
-            className="mb-2 inline-flex items-center gap-2 text-2xl font-bold tracking-tight"
+            className="mb-2 inline-flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground"
           >
             <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10">
-              <Activity className="h-6 w-6 text-emerald-400" />
+              <Activity className="h-6 w-6 text-emerald-500" />
             </span>
             <span>
-              Pulse<span className="text-emerald-400">Watch</span>
+              Pulse<span className="text-emerald-500">Watch</span>
             </span>
           </Link>
 
-          <h1 className="mt-4 text-xl font-bold">Welcome back</h1>
-          <p className="mt-1 text-xs text-neutral-400">
-            Sign in to monitor your services
+          <h1 className="mt-4 text-xl font-bold text-foreground">Welcome back</h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Sign in to monitor your services in real time
           </p>
         </header>
 
@@ -72,12 +81,12 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="email"
-              className="mb-1 block text-xs font-semibold text-neutral-300"
+              className="mb-1 block text-xs font-semibold text-foreground/80"
             >
               Email address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <input
                 id="email"
                 name="email"
@@ -88,7 +97,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isSubmitting}
-                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-60"
+                className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-60 shadow-xs placeholder:text-muted-foreground"
               />
             </div>
           </div>
@@ -96,12 +105,12 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="password"
-              className="mb-1 block text-xs font-semibold text-neutral-300"
+              className="mb-1 block text-xs font-semibold text-foreground/80"
             >
               Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <input
                 id="password"
                 name="password"
@@ -112,7 +121,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isSubmitting}
-                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-60"
+                className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:opacity-60 shadow-xs placeholder:text-muted-foreground"
               />
             </div>
           </div>
@@ -136,16 +145,32 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <footer className="border-t border-neutral-800/80 pt-4 text-center text-xs text-neutral-400">
+        <footer className="border-t border-border pt-4 text-center text-xs text-muted-foreground">
           Don&apos;t have an account?{" "}
           <Link
             href="/register"
-            className="font-semibold text-emerald-400 hover:underline"
+            className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
           >
             Create account
           </Link>
         </footer>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <LoaderCircle className="h-8 w-8 animate-spin text-emerald-500" />
+        </div>
+      }
+    >
+      <GuestRoute>
+        <LoginForm />
+      </GuestRoute>
+    </Suspense>
   );
 }
