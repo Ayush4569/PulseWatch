@@ -57,7 +57,7 @@ const updateMontiorConfig = asyncHandler(async (req, res) => {
     const { monitorId } = req.params as { monitorId: string };
     const { url, interval } = req.body;
 
-    const updatedMonitor = await updateMontiorService({url, interval}, userId, monitorId);
+    const updatedMonitor = await updateMontiorService({ url, interval }, userId, monitorId);
 
     return res.status(200).json(
         new ApiResponse(
@@ -73,36 +73,35 @@ const deleteMonitor = asyncHandler(async (req, res) => {
 
     const { monitorId } = req.params as { monitorId: string };
 
-    await deleteMonitorService(userId,monitorId);
+    await deleteMonitorService(userId, monitorId);
 
     return res.status(200).json(
         new ApiResponse(
-            201,
+            200,
             "Monitor deleted successfully",
             null
         )
     )
 })
-const toggleStatus = asyncHandler(async(req,res)=> {
+const toggleStatus = asyncHandler(async (req, res) => {
     const userId = req.user?.id;
     if (!userId) throw new CustomError(401, "Unauthorized!");
 
     const { monitorId } = req.params as { monitorId: string };
-    const {isActive} = req.body;
+    const { isActive } = req.body;
 
-    if(typeof isActive != 'boolean') {
+    if (typeof isActive != 'boolean') {
         throw new CustomError(400, "isActive must be a boolean");
     }
 
-    await toggleMonitorStatusService(userId,monitorId,isActive);
-
+    const updatedMonitor = await toggleMonitorStatusService(userId, monitorId, isActive);
     return res.status(200).json(
         new ApiResponse(
-            201,
-            "Monitor toggled successfully",
-            null
+            200,
+            "Monitor status updated",
+            updatedMonitor
         )
-    ) 
+    );
 
 })
 export {

@@ -37,7 +37,7 @@ export function LiveActivity({ checks, getMonitorUrl }: LiveActivityProps) {
           const url = getMonitorUrl ? getMonitorUrl(check.monitorId) : `Monitor ${check.monitorId.slice(0, 8)}`;
           return (
             <div
-              key={`${check.monitorId}`}
+              key={`${check.monitorId}-${check.checkedAt}`}
               className={`flex items-center justify-between rounded-lg p-2.5 text-xs transition-all animate-in fade-in slide-in-from-top-1 ${
                 check.success
                   ? "bg-neutral-950/40 hover:bg-neutral-950/80 text-neutral-300"

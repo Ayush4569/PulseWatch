@@ -11,10 +11,12 @@ const processMonitor = new Worker(
     console.log(
       `Processing job ${job.id} for monitor ${monitorId}...`
     );
-    const {userId,...data} = await performHealthCheckService(monitorId);
-    await publishMonitorCheck(userId, data);
+    const result = await performHealthCheckService(monitorId);
+    if (result) {
+      await publishMonitorCheck(result.userId, result);
+    }
   },
-  { connection }
+  { connection,concurrency:10 }
 );
 processMonitor.on('completed', (job) => {
   console.log(`Job ${job.id} has completed!`);

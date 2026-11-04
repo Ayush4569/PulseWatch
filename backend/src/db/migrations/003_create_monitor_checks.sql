@@ -13,5 +13,5 @@ CREATE TABLE monitor_checks (
 
     checked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    FOREIGN KEY (monitor_id) REFERENCES monitors(id)
+    FOREIGN KEY (monitor_id) REFERENCES monitors(id) ON DELETE CASCADE
 );

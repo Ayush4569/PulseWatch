@@ -96,11 +96,21 @@ export interface IncidentItem {
   status: "OPEN" | "RESOLVED";
 }
 
+export interface IncidentsResponse {
+  incidents: IncidentItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export interface MonitorCheckEvent {
   monitorId: string;
   success: boolean;
   statusCode: number | null;
-  userId: string;
+  userId?: string;
   latencyMs: number;
   errorMessage: string | null;
   checkedAt: string;

@@ -23,10 +23,15 @@ const createMonitorService = async (url: string, interval: number, userId: strin
 
         const monitor = result.rows[0];
         monitorId = monitor.id;
-
-        await registerMonitorScheduler(monitor.id, monitor.interval_seconds);
-        isRegistered = true;
         await client.query("COMMIT");
+        try {
+            await registerMonitorScheduler(monitor.id, monitor.interval_seconds);
+            isRegistered = true;
+        } catch (schedulerError) {
+            // Compensate for the already-committed database row
+            await client.query(`DELETE FROM monitors WHERE id = $1`, [monitor.id]);
+            throw schedulerError;
+        }
         return {
             id: monitor.id,
             url: monitor.url,
@@ -59,11 +64,11 @@ const createMonitorService = async (url: string, interval: number, userId: strin
 }
 
 const getMonitorsService = async (userId: string) => {
-  const client = await pool.connect();
+    const client = await pool.connect();
 
-  try {
-    const result = await client.query(
-      `
+    try {
+        const result = await client.query(
+            `
       SELECT
         m.id,
         m.url,
@@ -83,7 +88,12 @@ const getMonitorsService = async (userId: string) => {
         latest.checked_at AS "lastCheckedAt",
         latest.error_message AS "lastErrorMessage",
 
-        analytics.uptime AS uptime
+        analytics.uptime AS uptime,
+
+        EXISTS (
+          SELECT 1 FROM incidents inc
+          WHERE inc.monitor_id = m.id AND inc.status = 'OPEN'
+        ) AS "hasActiveIncident"
 
       FROM monitors m
 
@@ -116,20 +126,20 @@ const getMonitorsService = async (userId: string) => {
 
       ORDER BY m.created_at DESC
       `,
-      [userId]
-    );
+            [userId]
+        );
 
-    return result.rows;
-  } catch (error) {
-    console.error("Error fetching monitors:", error);
+        return result.rows;
+    } catch (error) {
+        console.error("Error fetching monitors:", error);
 
-    throw new CustomError(
-      500,
-      "Error fetching monitors"
-    );
-  } finally {
-    client.release();
-  }
+        throw new CustomError(
+            500,
+            "Error fetching monitors"
+        );
+    } finally {
+        client.release();
+    }
 };
 
 const getMonitorDetailsService = async (userId: string, monitorId: string) => {
@@ -142,6 +152,7 @@ const getMonitorDetailsService = async (userId: string, monitorId: string) => {
                 interval_seconds AS interval,
                 is_active AS "isActive",
                 created_at AS "createdAt",
+                updated_at AS "updatedAt"
              FROM monitors
              WHERE user_id = $1 AND id = $2`,
             [userId, monitorId]
@@ -176,9 +187,9 @@ const updateMontiorService = async (
 
     try {
         const monitor = await client.query(
-            `SELECT id from monitors WHERE id=$1 AND user_id=$2`,
+            `SELECT id, url, interval_seconds, is_active FROM monitors WHERE id = $1 AND user_id = $2`,
             [monitorId, userId]
-        )
+        );
 
         if (monitor.rows.length == 0) {
             throw new CustomError(404, "Monitor not found")
@@ -254,10 +265,8 @@ const deleteMonitorService = async (userId: string, monitorId: string) => {
             throw new CustomError(404, "Monitor not found");
         }
         monitorForRecovery = monitorResult.rows[0];
-        // remove the job from queue
         await removeMonitorScheduler(monitorId);
         schedulerDeleted = true;
-        // start a transaction & delete incidents and checks from db for the given monitor
 
         await client.query(`DELETE FROM monitor_checks WHERE monitor_id=$1`, [monitorId]);
 
@@ -322,16 +331,16 @@ const deleteMonitorService = async (userId: string, monitorId: string) => {
     }
 }
 const toggleMonitorStatusService = async (
-  userId: string,
-  monitorId: string,
-  isActive: boolean
+    userId: string,
+    monitorId: string,
+    isActive: boolean
 ) => {
-  const client = await pool.connect();
+    const client = await pool.connect();
 
-  try {
-    
-    const result = await client.query(
-      `UPDATE monitors
+    try {
+
+        const result = await client.query(
+            `UPDATE monitors
        SET is_active = $1,
            updated_at = NOW()
        WHERE id = $2 AND user_id = $3
@@ -340,36 +349,36 @@ const toggleMonitorStatusService = async (
          url,
          is_active AS "isActive",
          interval_seconds AS interval`,
-      [isActive, monitorId, userId]
-    );
+            [isActive, monitorId, userId]
+        );
 
-    if (result.rows.length === 0) {
-      throw new CustomError(404, "Monitor not found");
+        if (result.rows.length === 0) {
+            throw new CustomError(404, "Monitor not found");
+        }
+
+        const updatedMonitor = result.rows[0];
+
+        if (updatedMonitor.isActive) {
+            await registerMonitorScheduler(
+                updatedMonitor.id,
+                updatedMonitor.interval
+            );
+        } else {
+            await removeMonitorScheduler(updatedMonitor.id);
+        }
+
+        return updatedMonitor;
+    } catch (error) {
+        if (error instanceof CustomError) {
+            throw error;
+        }
+
+        console.error("Error updating monitor status:", error);
+
+        throw new CustomError(500, "Error updating monitor status");
+    } finally {
+        client.release();
     }
-
-    const updatedMonitor = result.rows[0];
-
-    if (updatedMonitor.isActive) {
-      await registerMonitorScheduler(
-        updatedMonitor.id,
-        updatedMonitor.interval
-      );
-    } else {
-      await removeMonitorScheduler(updatedMonitor.id);
-    }
-
-    return updatedMonitor;
-  } catch (error) {
-    if (error instanceof CustomError) {
-      throw error;
-    }
-
-    console.error("Error updating monitor status:", error);
-
-    throw new CustomError(500, "Error updating monitor status");
-  } finally {
-    client.release();
-  }
 };
 export {
     createMonitorService,

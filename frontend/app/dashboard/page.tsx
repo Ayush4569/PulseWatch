@@ -6,14 +6,15 @@ import { Navbar } from "../../components/layout/navbar";
 import { OverviewStats } from "../../components/dashboard/overview-stats";
 import { CreateMonitorModal } from "../../components/dashboard/create-monitor-modal";
 import { LiveActivity } from "../../components/dashboard/live-activity";
-import { MOCK_RECENT_CHECKS } from "../../lib/mock-data";
 import type { CreateMonitor, Monitor } from "../../lib/types";
 import { Loader2, Plus, Radio, RefreshCw } from "lucide-react";
 import { getApiErrorMessage } from "../../lib/api/client";
 import { useMonitors } from "@/hooks/useListMonitors";
 import { MonitorList } from "@/components/dashboard/monitor-list";
+import { useSocket } from "@/socket/socket-provider";
 
 export default function DashboardPage() {
+  const { liveChecks } = useSocket();
 
   const {
     data: monitors = [],
@@ -195,7 +196,7 @@ export default function DashboardPage() {
               {/* Recent activity */}
               <div className="min-w-0 self-end ">
                 <LiveActivity
-                  checks={MOCK_RECENT_CHECKS}
+                  checks={liveChecks}
                   getMonitorUrl={getMonitorUrlById}
                 />
               </div>

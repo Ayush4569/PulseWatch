@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Activity, ShieldAlert, Radio, LogOut, User as UserIcon, Plus } from "lucide-react";
 import { useState } from "react";
 import { useAuthContext } from "@/context/auth-context";
+import { useSocket } from "@/socket/socket-provider";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 
@@ -15,7 +16,8 @@ interface NavbarProps {
 
 export function Navbar({ onOpenCreateModal }: NavbarProps) {
   const pathname = usePathname();
-  const {user,logout} = useAuthContext()
+  const {user,logout} = useAuthContext();
+  const { status: socketStatus } = useSocket();
   const router = useRouter()
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -65,15 +67,39 @@ export function Navbar({ onOpenCreateModal }: NavbarProps) {
 
         {/* Right Section */}
         <div className="flex items-center gap-3">
-          {/* Static WebSocket status indicator */}
-          <div
-            className="hidden sm:flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium border bg-emerald-950/60 text-emerald-400 border-emerald-800/60"
-            title="Real-time WebSocket indicator"
-          >
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="h-2 w-2 rounded-full bg-emerald-400 -ml-4" />
-            <span>Live WebSocket</span>
-          </div>
+          {/* Real-time WebSocket status indicator */}
+          {socketStatus === "connected" && (
+            <div
+              className="hidden sm:flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium border bg-emerald-950/60 text-emerald-400 border-emerald-800/60"
+              title="WebSocket Connected: Real-time updates active"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              <span>Live WebSocket</span>
+            </div>
+          )}
+
+          {socketStatus === "connecting" && (
+            <div
+              className="hidden sm:flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium border bg-amber-950/60 text-amber-400 border-amber-800/60"
+              title="Connecting to WebSocket server..."
+            >
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+              <span>Connecting...</span>
+            </div>
+          )}
+
+          {socketStatus === "disconnected" && (
+            <div
+              className="hidden sm:flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium border bg-neutral-900 text-neutral-400 border-neutral-800"
+              title="WebSocket Disconnected"
+            >
+              <span className="h-2 w-2 rounded-full bg-neutral-500" />
+              <span>Offline</span>
+            </div>
+          )}
 
           {/* Quick Create Monitor Button */}
           {onOpenCreateModal && (

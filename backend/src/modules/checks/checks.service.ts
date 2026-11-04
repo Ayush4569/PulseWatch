@@ -18,11 +18,11 @@ const performHealthCheckService = async (monitorId: string) => {
     const client = await pool.connect();
     try {
         const monitor = await client.query(
-            `SELECT url,user_id AS "userId" FROM monitors WHERE id = $1`,
+            `SELECT url, user_id AS "userId", is_active AS "isActive" FROM monitors WHERE id = $1`,
             [monitorId]
-        )
-        if (monitor.rows.length === 0) {
-            throw new Error("Monitor not found")
+        );
+        if (monitor.rows.length === 0 || !monitor.rows[0].isActive) {
+            return null;
         }
 
         const { url, userId } = monitor.rows[0];
@@ -64,12 +64,16 @@ const performHealthCheckService = async (monitorId: string) => {
     `,
             [monitorId, statusCode, latency, success, errorMessage]
         );
-        await processIncident({ userId,monitorId, success, errorMessage })
+        await processIncident({ userId, monitorId, success, errorMessage })
         return {
             ...insertResult.rows[0],
             userId
         }
-    } catch (error) {
+    } catch (error:any) {
+        if (error?.code === "23503") {
+            console.warn(`Monitor ${monitorId} was deleted while check was in-flight. Discarding check.`);
+            return null;
+        }
         console.error("Failed to perform health check:", error);
         throw error;
     } finally {

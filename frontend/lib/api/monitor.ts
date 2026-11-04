@@ -45,3 +45,35 @@ export const getMonitorChecksApi = async (
 
     return response.data;
 };
+
+export const getMonitorByIdApi = async (monitorId: string): Promise<ApiResponse<Monitor>> => {
+    const response = await apiClient
+        .get<ApiResponse<Monitor>>(`/monitors/${monitorId}`);
+    return response.data;
+};
+
+export const toggleMonitorStatusApi = async (
+    monitorId: string,
+    isActive: boolean
+): Promise<ApiResponse<null>> => {
+    const response = await apiClient
+        .patch<ApiResponse<null>>(`/monitors/${monitorId}/status`, { isActive });
+    return response.data;
+};
+
+export const deleteMonitorApi = async (
+    monitorId: string
+): Promise<ApiResponse<null>> => {
+    const response = await apiClient
+        .delete<ApiResponse<null>>(`/monitors/${monitorId}`);
+    return response.data;
+};
+
+export const updateMonitorApi = async (
+    monitorId: string,
+    payload: { url?: string; interval?: number }
+): Promise<ApiResponse<Monitor>> => {
+    const response = await apiClient
+        .patch<ApiResponse<Monitor>>(`/monitors/${monitorId}`, payload);
+    return response.data;
+};

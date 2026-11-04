@@ -13,7 +13,8 @@ declare module "socket.io" {
 export const initalizeSocket = (server: httpServer) => {
     const io = new Server(server, {
         cors: {
-            origin: "http://localhost:3000"
+            origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+            credentials: true
         }
     })
 
@@ -25,7 +26,7 @@ export const initalizeSocket = (server: httpServer) => {
         }
         try {
             const decoded = verifyAccessToken(token);
-            socket.user.id = decoded.id;
+            socket.user = { id: decoded.id };
             next()
         } catch (error) {
             return next(new Error('Authentication error: Invalid token'));

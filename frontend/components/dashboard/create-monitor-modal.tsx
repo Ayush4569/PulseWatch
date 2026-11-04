@@ -17,6 +17,7 @@ export function CreateMonitorModal({ isOpen, onClose, onMonitorCreated }: Create
   const [url, setUrl] = useState<string>("");
   const [interval, setInterval] = useState<number>(60);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
@@ -24,35 +25,36 @@ export function CreateMonitorModal({ isOpen, onClose, onMonitorCreated }: Create
     e.preventDefault();
     setError(null);
 
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
+      setError("URL is required.");
+      return;
+    }
 
+    if (!trimmedUrl.startsWith("https://")) {
+      setError("URL must start with https:// (e.g. https://api.example.com)");
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      const trimmedUrl = url.trim();
-      if (!trimmedUrl) {
-        setError("URL is required.");
-        return;
-      }
-
-      if (!trimmedUrl.startsWith("https://")) {
-        setError("URL must start with https:// (e.g. https://api.example.com)");
-        return;
-      }
-      const { data: monitor } = await createMonitorApi({ interval, url });
+      const { data: monitor } = await createMonitorApi({ interval, url: trimmedUrl });
       if (onMonitorCreated && monitor) {
         onMonitorCreated(monitor);
       }
       toast.success("Monitor created", {
         description: `Configured ${monitor?.url} every ${monitor?.interval}s`,
       });
+      setUrl("");
+      setInterval(60);
+      onClose();
     } catch (error) {
       const message = getApiErrorMessage(error);
       setError(message);
       toast.error(message);
     } finally {
-      setUrl("");
-      setInterval(60);
-      onClose();
+      setIsSubmitting(false);
     }
-
   };
 
   return (
@@ -120,16 +122,22 @@ export function CreateMonitorModal({ isOpen, onClose, onMonitorCreated }: Create
           <div className="mt-6 flex items-center justify-end gap-3 border-t border-neutral-800 pt-4">
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={onClose}
-              className="rounded-lg border border-neutral-800 px-4 py-2 text-xs font-medium text-neutral-300 hover:bg-neutral-800 transition"
+              className="rounded-lg border border-neutral-800 px-4 py-2 text-xs font-medium text-neutral-300 hover:bg-neutral-800 transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-neutral-950 hover:bg-emerald-400 transition"
+              disabled={isSubmitting}
+              className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-neutral-950 hover:bg-emerald-400 transition disabled:opacity-50"
             >
-              <span>Start Monitoring</span>
+              {isSubmitting ? (
+                <span>Creating...</span>
+              ) : (
+                <span>Start Monitoring</span>
+              )}
             </button>
           </div>
         </form>

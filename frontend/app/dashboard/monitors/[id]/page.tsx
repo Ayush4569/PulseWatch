@@ -1,8 +1,8 @@
-
 "use client";
 
 import React, { use, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Navbar } from "../../../../components/layout/navbar";
 import { LatencyChart } from "../../../../components/dashboard/latency-chart";
 import {
@@ -22,13 +22,18 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
+  Pause,
+  Play,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 
 import { toast } from "sonner";
 import { useMonitorAnalytics } from "@/hooks/useGetMonitorAnalytics";
 import { useGetMonitorChartData } from "@/hooks/useMonitorCheckSeries";
 import { useMonitorChecks } from "@/hooks/useMonitorChecks";
-
+import { useMonitorDetails } from "@/hooks/useMonitorDetails";
+import { useToggleMonitor, useDeleteMonitor } from "@/hooks/useMonitorActions";
 
 import type { Duration } from "@/lib/types";
 
@@ -48,13 +53,21 @@ const ranges: { label: string; value: Duration }[] = [
 export default function MonitorDetailPage({
   params,
 }: MonitorDetailPageProps) {
+  const router = useRouter();
   const resolvedParams = use(params);
   const monitorId = resolvedParams.id;
 
   const [page, setPage] = useState(1);
   const [range, setRange] = useState<Duration>("24h");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  
+  // Monitor base info (isActive, url, interval)
+  const {
+    data: monitorDetails,
+    refetch: refetchDetails,
+  } = useMonitorDetails(monitorId);
+
+  // Monitor analytics summary
   const {
     isPending: analyticsPending,
     error: analyticsError,
@@ -79,9 +92,16 @@ export default function MonitorDetailPage({
     refetch: refetchChecks,
   } = useMonitorChecks(monitorId, page, PAGE_SIZE);
 
+  // Actions
+  const toggleMutation = useToggleMonitor();
+  const deleteMutation = useDeleteMonitor();
+
+  const isPaused = monitorDetails ? monitorDetails.isActive === false : false;
+
   const refreshAll = async () => {
     try {
       await Promise.all([
+        refetchDetails(),
         refetchAnalytics(),
         refetchSeries(),
         refetchChecks(),
@@ -90,6 +110,22 @@ export default function MonitorDetailPage({
       toast.success("Monitor data refreshed");
     } catch {
       toast.error("Unable to refresh monitor data");
+    }
+  };
+
+  const handleToggle = () => {
+    toggleMutation.mutate({
+      monitorId,
+      isActive: isPaused,
+    });
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync(monitorId);
+      router.push("/dashboard/monitors");
+    } catch {
+      // toast is handled in mutation hook
     }
   };
 
@@ -137,13 +173,11 @@ export default function MonitorDetailPage({
   const checks = checksData?.checks ?? [];
   const pagination = checksData?.pagination;
 
-
   return (
     <div className="min-h-screen bg-neutral-950 text-white selection:bg-emerald-500 selection:text-black">
       <Navbar />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-
         {/* Back button */}
         <div>
           <Link
@@ -168,11 +202,41 @@ export default function MonitorDetailPage({
                 target="_blank"
                 rel="noreferrer"
                 className="text-neutral-400 hover:text-white transition"
+                title="Open target URL in new tab"
               >
                 <ExternalLink className="h-4 w-4" />
               </a>
 
-           
+              {/* Status Badge */}
+              <div
+                className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                  isPaused
+                    ? "border-neutral-700 bg-neutral-800 text-neutral-400"
+                    : Number(analytics.failedChecks) > 0 &&
+                      Number(analytics.successfulChecks) === 0
+                    ? "border-red-500/30 bg-red-500/10 text-red-400"
+                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                }`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    isPaused
+                      ? "bg-neutral-500"
+                      : Number(analytics.failedChecks) > 0 &&
+                        Number(analytics.successfulChecks) === 0
+                      ? "bg-red-500 animate-ping"
+                      : "bg-emerald-400 animate-pulse"
+                  }`}
+                />
+                <span>
+                  {isPaused
+                    ? "Paused"
+                    : Number(analytics.failedChecks) > 0 &&
+                      Number(analytics.successfulChecks) === 0
+                    ? "Failing"
+                    : "Operational"}
+                </span>
+              </div>
             </div>
 
             <p className="mt-1 font-mono text-xs text-neutral-400">
@@ -180,14 +244,85 @@ export default function MonitorDetailPage({
             </p>
           </div>
 
-          <button
-            onClick={() => void refreshAll()}
-            className="flex items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-medium text-neutral-300 hover:bg-neutral-800 transition"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Refresh Metrics
-          </button>
+          {/* Action buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Pause / Resume Button */}
+            <button
+              onClick={handleToggle}
+              disabled={toggleMutation.isPending}
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition disabled:opacity-50 ${
+                isPaused
+                  ? "border-emerald-800/80 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/50"
+                  : "border-neutral-800 bg-neutral-900 text-neutral-300 hover:bg-neutral-800"
+              }`}
+            >
+              {toggleMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : isPaused ? (
+                <Play className="h-3.5 w-3.5 text-emerald-400" />
+              ) : (
+                <Pause className="h-3.5 w-3.5 text-neutral-400" />
+              )}
+              <span>{isPaused ? "Resume Monitoring" : "Pause Monitoring"}</span>
+            </button>
+
+            {/* Delete Button */}
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-red-900/40 bg-red-950/20 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-900/40 transition"
+              title="Delete monitor"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Delete</span>
+            </button>
+
+            {/* Refresh Button */}
+            <button
+              onClick={() => void refreshAll()}
+              className="flex items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-xs font-medium text-neutral-300 hover:bg-neutral-800 transition"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Refresh Metrics</span>
+            </button>
+          </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/80 p-4 backdrop-blur-sm animate-in fade-in">
+            <div className="w-full max-w-sm rounded-xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl space-y-4">
+              <h3 className="text-base font-bold text-white">
+                Delete Monitor?
+              </h3>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                Are you sure you want to delete this monitor for{" "}
+                <span className="font-semibold text-white">{analytics.url}</span>?
+                All check history and related incident logs will be permanently removed.
+              </p>
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => setShowDeleteModal(false)}
+                  className="rounded-lg border border-neutral-800 px-4 py-2 text-xs font-medium text-neutral-300 hover:bg-neutral-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deleteMutation.isPending}
+                  onClick={handleDelete}
+                  className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-500 transition disabled:opacity-50"
+                >
+                  {deleteMutation.isPending && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  )}
+                  <span>Delete Monitor</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Metrics */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -274,7 +409,7 @@ export default function MonitorDetailPage({
                   Recent Check Log
                 </h3>
                 <p className="mt-1 text-[11px] text-neutral-500">
-                  Individual health-check executions
+                  Individual health-check executions updated in real time
                 </p>
               </div>
             </div>
@@ -328,7 +463,7 @@ export default function MonitorDetailPage({
                             <span
                               className={
                                 check.success
-                                  ? "font-semibold text-emerald-400"
+                                    ? "font-semibold text-emerald-400"
                                   : "font-semibold text-red-400"
                               }
                             >
@@ -372,7 +507,7 @@ export default function MonitorDetailPage({
               <div className="flex flex-col gap-3 border-t border-neutral-800 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-neutral-500">
                   Showing{" "}
-                  {((page - 1) * PAGE_SIZE) + 1}
+                  {(page - 1) * PAGE_SIZE + 1}
                   {" - "}
                   {Math.min(page * PAGE_SIZE, pagination?.total ?? 0)}
                   {" of "}
@@ -429,9 +564,7 @@ function MetricCard({
 }) {
   return (
     <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
-      <span className="text-xs font-medium text-neutral-400">
-        {label}
-      </span>
+      <span className="text-xs font-medium text-neutral-400">{label}</span>
 
       <div className="mt-2 flex items-center gap-1.5 text-2xl font-bold text-white">
         {icon}

@@ -7,7 +7,7 @@ CREATE TABLE incidents (
     resolved_at TIMESTAMPTZ,
     status incident_status NOT NULL DEFAULT 'OPEN',
     failure_reason TEXT NOT NULL,
-    FOREIGN KEY (monitor_id) REFERENCES monitors(id)
+    FOREIGN KEY (monitor_id) REFERENCES monitors(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_incidents_monitor_id

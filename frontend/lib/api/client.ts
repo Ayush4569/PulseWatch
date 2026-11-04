@@ -133,7 +133,7 @@ apiClient.interceptors.response.use(
 
             return apiClient.request(originalRequest)
         } catch (error) {
-            toast.error("Your session has expired. Please log in again.");
+            if(accessToken) toast.error("Your session has expired. Please log in again.");
             return Promise.reject(error);
         }
     }
