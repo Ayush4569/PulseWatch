@@ -11,6 +11,8 @@ import {
   Plus,
   Menu,
   X,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuthContext } from "@/context/auth-context";
@@ -109,6 +111,25 @@ export function Navbar({ onOpenCreateModal }: NavbarProps) {
 
           {/* Right Section */}
           <div className="flex items-center gap-2.5">
+            {/* Guest Mode Indicator Badge */}
+            {user?.isGuest && (
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                <Sparkles className="h-3 w-3" />
+                <span>Guest (1 Monitor)</span>
+              </span>
+            )}
+
+            {/* Guest Sign Up CTA */}
+            {user?.isGuest && (
+              <Link
+                href="/register"
+                className="hidden sm:inline-flex items-center gap-1 rounded-lg bg-emerald-600 dark:bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white dark:text-neutral-950 shadow-sm transition hover:bg-emerald-500 dark:hover:bg-emerald-400 active:scale-95"
+              >
+                <span>Sign Up Free</span>
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            )}
+
             {/* WebSocket Status Indicator */}
             {socketStatus === "connected" && (
               <div
@@ -152,9 +173,9 @@ export function Navbar({ onOpenCreateModal }: NavbarProps) {
             {onOpenCreateModal && (
               <button
                 onClick={onOpenCreateModal}
-                className="hidden sm:flex items-center gap-1.5 rounded-lg bg-emerald-600 dark:bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white dark:text-neutral-950 shadow-sm transition-all hover:bg-emerald-500 dark:hover:bg-emerald-400 active:scale-95"
+                className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs transition hover:bg-accent active:scale-95"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-3.5 w-3.5 text-emerald-500" />
                 <span>New Monitor</span>
               </button>
             )}
@@ -173,20 +194,41 @@ export function Navbar({ onOpenCreateModal }: NavbarProps) {
 
               {userMenuOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-popover p-1 shadow-xl text-xs z-50 animate-in fade-in zoom-in-95"
+                  className="absolute right-0 mt-2 w-52 rounded-xl border border-border bg-popover p-1.5 shadow-xl text-xs z-50 animate-in fade-in zoom-in-95"
                   onMouseLeave={() => setUserMenuOpen(false)}
                 >
-                  <div className="px-3 py-2 border-b border-border">
-                    <p className="font-semibold text-foreground truncate">
-                      {user?.username}
-                    </p>
-                    <p className="text-muted-foreground text-[11px] truncate">
-                      {user?.email}
+                  <div className="px-3 py-2 border-b border-border/80">
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-foreground truncate">
+                        {user?.username}
+                      </p>
+                      {user?.isGuest && (
+                        <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase">
+                          Guest
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground text-[11px] truncate mt-0.5">
+                      {user?.isGuest ? "Temporary guest mode" : user?.email}
                     </p>
                   </div>
+
+                  {user?.isGuest && (
+                    <div className="p-1 border-b border-border/80">
+                      <Link
+                        href="/register"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex w-full items-center justify-between gap-1 rounded-lg bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition"
+                      >
+                        <span>Upgrade to Free Account</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  )}
+
                   <button
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition text-left mt-1"
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition text-left mt-1"
                   >
                     <LogOut className="h-3.5 w-3.5" />
                     Sign Out
@@ -248,6 +290,27 @@ export function Navbar({ onOpenCreateModal }: NavbarProps) {
                   <X className="h-4 w-4" />
                 </button>
               </div>
+
+              {/* Guest Notification in Mobile Sidebar */}
+              {user?.isGuest && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Guest Mode (1 Monitor)</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Create a permanent account to unlock unlimited monitors and keep this endpoint.
+                  </p>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 dark:bg-emerald-500 py-1.5 text-xs font-bold text-white dark:text-neutral-950 transition hover:bg-emerald-500 dark:hover:bg-emerald-400 shadow-xs"
+                  >
+                    <span>Sign Up Free</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              )}
 
               {/* Status Badge inside Sidebar */}
               <div className="flex items-center justify-between rounded-xl bg-muted/40 border border-border/60 p-3">
@@ -342,7 +405,7 @@ export function Navbar({ onOpenCreateModal }: NavbarProps) {
                       {user?.username}
                     </p>
                     <p className="text-[11px] text-muted-foreground truncate">
-                      {user?.email}
+                      {user?.isGuest ? "Temporary guest mode" : user?.email}
                     </p>
                   </div>
                 </div>

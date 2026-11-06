@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Globe, Clock, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { X, Globe, Clock, AlertCircle, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { CreateMonitor } from "../../lib/types";
 import { createMonitorApi } from "@/lib/api/monitor";
@@ -11,12 +12,14 @@ interface CreateMonitorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onMonitorCreated?: (newMonitor: CreateMonitor) => void;
+  onGuestLimitReached?: () => void;
 }
 
 export function CreateMonitorModal({
   isOpen,
   onClose,
   onMonitorCreated,
+  onGuestLimitReached,
 }: CreateMonitorModalProps) {
   const [url, setUrl] = useState<string>("");
   const [interval, setInterval] = useState<number>(60);
@@ -29,14 +32,21 @@ export function CreateMonitorModal({
     e.preventDefault();
     setError(null);
 
-    const trimmedUrl = url.trim();
+    let trimmedUrl = url.trim();
     if (!trimmedUrl) {
-      setError("URL is required.");
+      setError("URL or domain is required.");
       return;
     }
 
-    if (!trimmedUrl.startsWith("https://")) {
-      setError("URL must start with https:// (e.g. https://api.example.com)");
+    // Automatically normalize URL: default to https:// if scheme is missing
+    if (!/^https?:\/\//i.test(trimmedUrl)) {
+      trimmedUrl = `https://${trimmedUrl}`;
+    }
+
+    try {
+      new URL(trimmedUrl);
+    } catch {
+      setError("Please enter a valid domain or URL (e.g. facebook.com)");
       return;
     }
 
@@ -55,8 +65,18 @@ export function CreateMonitorModal({
       setUrl("");
       setInterval(60);
       onClose();
-    } catch (error) {
-      const message = getApiErrorMessage(error);
+    } catch (err) {
+      const message = getApiErrorMessage(err);
+      if (message.toLowerCase().includes("guest limit")) {
+        toast.error("Guest limit reached", {
+          description: "Guest sessions can monitor at most 1 endpoint.",
+        });
+        if (onGuestLimitReached) {
+          onClose();
+          onGuestLimitReached();
+          return;
+        }
+      }
       setError(message);
       toast.error(message);
     } finally {
@@ -74,7 +94,7 @@ export function CreateMonitorModal({
               Create New Monitor
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Configure uptime & latency monitoring for your HTTPS endpoint.
+              Configure uptime & latency monitoring for any domain or URL.
             </p>
           </div>
           <button
@@ -89,22 +109,34 @@ export function CreateMonitorModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           {error && (
-            <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-600 dark:text-red-300">
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
-              <span>{error}</span>
+            <div className="flex flex-col gap-1.5 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-600 dark:text-red-300">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                <span className="font-medium">{error}</span>
+              </div>
+              {error.toLowerCase().includes("guest limit") && (
+                <Link
+                  href="/register"
+                  className="mt-1 inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                >
+                  <span>Create free account to unlock unlimited monitors</span>
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              )}
             </div>
           )}
 
           <div>
             <label className="block text-xs font-semibold text-foreground mb-1.5">
-              Target URL <span className="text-red-500">*</span>
+              Target URL or Domain <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <input
-                type="url"
+                type="text"
+                inputMode="url"
                 required
-                placeholder="https://api.yourdomain.com/health"
+                placeholder="e.g. facebook.com or https://api.yourdomain.com"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
@@ -126,7 +158,6 @@ export function CreateMonitorModal({
                 <option value={30}>Every 30 seconds</option>
                 <option value={60}>Every 1 minute</option>
                 <option value={300}>Every 5 minutes</option>
-                <option value={600}>Every 10 minutes</option>
               </select>
             </div>
           </div>

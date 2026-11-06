@@ -8,8 +8,12 @@ import { Plus, Radio, RefreshCw } from "lucide-react";
 import { useMonitors } from "@/hooks/useListMonitors";
 import { queryClient } from "@/lib/query-client";
 import { CreateMonitor, Monitor } from "@/lib/types";
+import { useAuthContext } from "@/context/auth-context";
+import { GuestBanner } from "@/components/dashboard/guest-banner";
+import { GuestLimitModal } from "@/components/dashboard/guest-limit-modal";
 
 export default function MonitorsPage() {
+  const { user } = useAuthContext();
   const {
     data: monitors = [],
     isPending,
@@ -19,6 +23,15 @@ export default function MonitorsPage() {
   } = useMonitors();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+  const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState<boolean>(false);
+
+  const handleOpenCreateModal = () => {
+    if (user?.isGuest && monitors.length >= 1) {
+      setIsGuestLimitModalOpen(true);
+    } else {
+      setIsCreateModalOpen(true);
+    }
+  };
 
   const handleMonitorCreated = (created: CreateMonitor) => {
     const monitor: Monitor = {
@@ -40,14 +53,17 @@ export default function MonitorsPage() {
       ]
     );
 
+    queryClient.invalidateQueries({ queryKey: ["ai-dashboard-summary"] });
     setIsCreateModalOpen(false);
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
-      <Navbar onOpenCreateModal={() => setIsCreateModalOpen(true)} />
+      <Navbar onOpenCreateModal={handleOpenCreateModal} />
 
-      <main className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8 animate-in fade-in duration-200">
+      <main className="mx-auto max-w-7xl space-y-6 sm:space-y-8 px-4 py-6 sm:py-8 sm:px-6 lg:px-8 animate-in fade-in duration-200">
+        <GuestBanner monitorCount={monitors.length} />
+
         {/* Header */}
         <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -79,7 +95,7 @@ export default function MonitorsPage() {
 
             <button
               type="button"
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={handleOpenCreateModal}
               className="flex items-center gap-1.5 rounded-lg bg-emerald-600 dark:bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-white dark:text-neutral-950 transition hover:bg-emerald-500 dark:hover:bg-emerald-400 shadow-sm active:scale-95"
             >
               <Plus className="h-4 w-4" />
@@ -94,7 +110,7 @@ export default function MonitorsPage() {
           isPending={isPending}
           error={error}
           onRetry={() => void refetch()}
-          onCreateMonitor={() => setIsCreateModalOpen(true)}
+          onCreateMonitor={handleOpenCreateModal}
           columns="page"
         />
       </main>
@@ -103,6 +119,12 @@ export default function MonitorsPage() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onMonitorCreated={handleMonitorCreated}
+        onGuestLimitReached={() => setIsGuestLimitModalOpen(true)}
+      />
+
+      <GuestLimitModal
+        isOpen={isGuestLimitModalOpen}
+        onClose={() => setIsGuestLimitModalOpen(false)}
       />
     </div>
   );

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FormEvent, Suspense } from "react";
@@ -11,6 +10,7 @@ import {
   Lock,
   ArrowRight,
   LoaderCircle,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,13 +22,14 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { register } = useAuthContext();
+  const { register, user, loginAsGuest } = useAuthContext();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGuestStarting, setIsGuestStarting] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -45,9 +46,14 @@ function RegisterForm() {
     try {
       await register({ username, email, password });
 
-      toast.success("Account created successfully", {
-        description: "Welcome to PulseWatch! Redirecting...",
-      });
+      toast.success(
+        user?.isGuest
+          ? "Account created & guest monitor preserved!"
+          : "Account created successfully",
+        {
+          description: "Welcome to PulseWatch! Redirecting...",
+        }
+      );
 
       const redirect = searchParams.get("redirect") || "/dashboard";
       router.replace(redirect);
@@ -58,6 +64,19 @@ function RegisterForm() {
     }
   }
 
+  async function handleExploreAsGuest() {
+    setIsGuestStarting(true);
+    try {
+      await loginAsGuest();
+      toast.success("Guest session initialized");
+      router.push("/dashboard");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setIsGuestStarting(false);
+    }
+  }
+
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-background px-4 py-12 text-foreground transition-colors duration-200">
       {/* Top right theme toggle */}
@@ -65,7 +84,7 @@ function RegisterForm() {
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-md space-y-8 rounded-2xl border border-border bg-card p-8 shadow-xl animate-in fade-in duration-300">
+      <div className="w-full max-w-md space-y-6 rounded-2xl border border-border bg-card p-8 shadow-xl animate-in fade-in duration-300">
         <header className="text-center">
           <Link
             href="/"
@@ -79,13 +98,24 @@ function RegisterForm() {
             </span>
           </Link>
 
-          <h1 className="mt-4 text-xl font-bold text-foreground">
-            Create your account
+          <h1 className="mt-3 text-xl font-bold text-foreground">
+            {user?.isGuest ? "Save Your Guest Monitor" : "Create your account"}
           </h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Start monitoring your endpoints in real time
+            {user?.isGuest
+              ? "Upgrade to a permanent free account to keep your active monitor"
+              : "Start monitoring your endpoints in real time"}
           </p>
         </header>
+
+        {user?.isGuest && (
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-foreground flex items-center gap-2.5">
+            <Sparkles className="h-4 w-4 text-emerald-500 shrink-0" />
+            <span className="leading-relaxed">
+              Your existing guest monitor and check history will automatically be linked to this account!
+            </span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -191,21 +221,35 @@ function RegisterForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 py-2.5 text-sm font-bold text-neutral-950 shadow-md shadow-emerald-500/10 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 py-2.5 text-sm font-bold text-neutral-950 shadow-md shadow-emerald-500/10 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 active:scale-98"
           >
             {isSubmitting ? (
               <>
                 <LoaderCircle className="h-4 w-4 animate-spin" />
-                Creating account...
+                <span>{user?.isGuest ? "Saving & Upgrading..." : "Creating account..."}</span>
               </>
             ) : (
               <>
-                Create account
+                <span>{user?.isGuest ? "Save Monitor & Create Account" : "Create account"}</span>
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
           </button>
         </form>
+
+        {!user?.isGuest && (
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={handleExploreAsGuest}
+              disabled={isGuestStarting}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>{isGuestStarting ? "Starting guest session..." : "Or try live without an account (1 Free Monitor)"}</span>
+            </button>
+          </div>
+        )}
 
         <footer className="border-t border-border pt-4 text-center text-xs text-muted-foreground">
           Already have an account?{" "}

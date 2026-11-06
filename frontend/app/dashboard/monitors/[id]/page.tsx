@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "../../../../components/layout/navbar";
 import { LatencyChart } from "../../../../components/dashboard/latency-chart";
+import { GuestBanner } from "@/components/dashboard/guest-banner";
 import {
   StatsCardSkeleton,
   ChartSkeleton,
@@ -206,7 +207,8 @@ export default function MonitorDetailPage({
     <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
       <Navbar />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-in fade-in duration-300">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+        <GuestBanner monitorCount={1} />
         {/* Back button */}
         <div>
           <Link

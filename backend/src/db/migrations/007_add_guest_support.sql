@@ -1,0 +1,4 @@
+-- Migration 007: Add guest support to users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_guest BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+ALTER TABLE users ALTER COLUMN username TYPE VARCHAR(50);

@@ -6,6 +6,7 @@ export interface AccessTokenPayload {
     id: string;
     email: string;
     username: string;
+    isGuest?: boolean;
 }
 
 export interface RefreshTokenPayload {
@@ -32,26 +33,28 @@ export const verifyRefreshToken = (token: string): RefreshTokenPayload => {
     return jwt.verify(token, config.JWT_REFRESH_SECRET) as RefreshTokenPayload;
 };
 
+const isProduction = config.NODE_ENV === "production";
+
 export const getAccessCookieOptions = (): CookieOptions => ({
     httpOnly: true,
-    secure: config.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
     maxAge: 15 * 60 * 1000, // 15 minutes
 });
 
 export const getRefreshCookieOptions = (): CookieOptions => ({
     httpOnly: true,
-    secure: config.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 });
 
 export const getClearCookieOptions = (): CookieOptions => ({
     httpOnly: true,
-    secure: config.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
     maxAge: 0,
 });

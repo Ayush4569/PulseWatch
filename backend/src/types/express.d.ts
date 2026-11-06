@@ -4,6 +4,7 @@ export interface AuthUser {
     id: string;
     email: string;
     username: string;
+    isGuest?: boolean;
 }
 
 declare global {

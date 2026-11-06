@@ -12,8 +12,13 @@ import { MonitorList } from "@/components/dashboard/monitor-list";
 import { useSocket } from "@/socket/socket-provider";
 import { queryClient } from "@/lib/query-client";
 import { DashboardPageSkeleton } from "@/components/dashboard/dashboard-skeletons";
+import { useAuthContext } from "@/context/auth-context";
+import { GuestBanner } from "@/components/dashboard/guest-banner";
+import { GuestLimitModal } from "@/components/dashboard/guest-limit-modal";
+import { AiDashboardSummary } from "@/components/dashboard/ai-summary";
 
 export default function DashboardPage() {
+  const { user } = useAuthContext();
   const { liveChecks } = useSocket();
 
   const {
@@ -25,6 +30,15 @@ export default function DashboardPage() {
   } = useMonitors();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isGuestLimitModalOpen, setIsGuestLimitModalOpen] = useState(false);
+
+  const handleOpenCreateModal = () => {
+    if (user?.isGuest && monitors.length >= 1) {
+      setIsGuestLimitModalOpen(true);
+    } else {
+      setIsCreateModalOpen(true);
+    }
+  };
 
   const aggregatedStats = useMemo(() => {
     const uptimeValues = monitors
@@ -92,13 +106,16 @@ export default function DashboardPage() {
       ]
     );
 
+    // Refresh AI summary when a new monitor is added
+    queryClient.invalidateQueries({ queryKey: ["ai-dashboard-summary"] });
+
     setIsCreateModalOpen(false);
   };
 
   if (isPending) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <Navbar onOpenCreateModal={() => setIsCreateModalOpen(true)} />
+        <Navbar onOpenCreateModal={handleOpenCreateModal} />
         <DashboardPageSkeleton />
       </div>
     );
@@ -106,9 +123,12 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
-      <Navbar onOpenCreateModal={() => setIsCreateModalOpen(true)} />
+      <Navbar onOpenCreateModal={handleOpenCreateModal} />
 
-      <main className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8 animate-in fade-in duration-200">
+      <main className="mx-auto max-w-7xl space-y-6 sm:space-y-8 px-4 py-6 sm:py-8 sm:px-6 lg:px-8 animate-in fade-in duration-200">
+        {/* Guest Banner (Rendered when guest session is active) */}
+        <GuestBanner monitorCount={monitors.length} />
+
         {/* Header */}
         <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -124,10 +144,13 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={() => void refetch()}
+              onClick={() => {
+                void refetch();
+                queryClient.invalidateQueries({ queryKey: ["ai-dashboard-summary"] });
+              }}
               disabled={isFetching}
               className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent disabled:opacity-50 active:scale-95"
-              title="Refresh all metrics"
+              title="Refresh all metrics and AI summary"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 text-muted-foreground ${
@@ -139,7 +162,7 @@ export default function DashboardPage() {
 
             <button
               type="button"
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={handleOpenCreateModal}
               className="flex items-center gap-1.5 rounded-lg bg-emerald-600 dark:bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-white dark:text-neutral-950 transition hover:bg-emerald-500 dark:hover:bg-emerald-400 shadow-sm active:scale-95"
             >
               <Plus className="h-4 w-4" />
@@ -147,6 +170,9 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* AI-Powered Telemetry Intelligence Summary */}
+        <AiDashboardSummary />
 
         {/* Overview Stats */}
         <OverviewStats
@@ -178,7 +204,7 @@ export default function DashboardPage() {
             isPending={isPending}
             error={error}
             onRetry={() => void refetch()}
-            onCreateMonitor={() => setIsCreateModalOpen(true)}
+            onCreateMonitor={handleOpenCreateModal}
             columns="dashboard"
           />
         </section>
@@ -188,6 +214,12 @@ export default function DashboardPage() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onMonitorCreated={handleMonitorCreated}
+        onGuestLimitReached={() => setIsGuestLimitModalOpen(true)}
+      />
+
+      <GuestLimitModal
+        isOpen={isGuestLimitModalOpen}
+        onClose={() => setIsGuestLimitModalOpen(false)}
       />
     </div>
   );

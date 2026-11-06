@@ -12,10 +12,13 @@ import {
     logoutController,
     refreshTokenController,
     meController,
+    createGuestSessionController,
 } from "./auth.controller.js";
 
 const router = Router();
 
+router.post("/guest-session", createGuestSessionController);
+router.post("/guest", createGuestSessionController);
 router.post("/register", validate(registerSchema), registerController);
 router.post("/login", validate(loginSchema), loginController);
 router.post("/logout", authenticate, logoutController);

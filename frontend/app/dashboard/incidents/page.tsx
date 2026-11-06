@@ -7,6 +7,7 @@ import { formatTimeAgo } from "../../../lib/formatters";
 import { useIncidents } from "@/hooks/useIncidents";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { IncidentRowSkeleton } from "@/components/dashboard/dashboard-skeletons";
+import { GuestBanner } from "@/components/dashboard/guest-banner";
 import {
   ShieldAlert,
   CheckCircle2,
@@ -63,7 +64,8 @@ export default function IncidentsPage() {
     <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
       <Navbar />
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+        <GuestBanner monitorCount={1} />
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-5">
           <div>

@@ -1,11 +1,30 @@
 import { CustomError } from "../../utils/apiError.js";
 import pool from "../../db/client.js";
 import { registerMonitorScheduler, removeMonitorScheduler } from "../../jobs/scheduler.js";
-const createMonitorService = async (url: string, interval: number, userId: string) => {
+const createMonitorService = async (
+    url: string,
+    interval: number,
+    userId: string,
+    isGuest: boolean = false
+) => {
     const client = await pool.connect();
     let monitorId: string | null = null;
     let isRegistered = false;
     try {
+        if (isGuest) {
+            const countResult = await client.query(
+                "SELECT COUNT(*) AS count FROM monitors WHERE user_id = $1",
+                [userId]
+            );
+            const count = parseInt(countResult.rows[0]?.count || "0", 10);
+            if (count >= 1) {
+                throw new CustomError(
+                    403,
+                    "Guest limit reached. You can only create 1 monitor as a guest. Please create a free account to unlock unlimited monitors."
+                );
+            }
+        }
+
         await client.query("BEGIN");
         const result = await client.query(
             `INSERT INTO monitors
@@ -51,6 +70,9 @@ const createMonitorService = async (url: string, interval: number, userId: strin
                     cleanupError
                 );
             }
+        }
+        if (error instanceof CustomError) {
+            throw error;
         }
         console.error("Error creating monitor:", error);
 

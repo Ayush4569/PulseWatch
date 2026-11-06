@@ -2,13 +2,22 @@
 import type { PoolClient } from "pg";
 import pool from "./client.js";
 
-import fs from "node:fs/promises"
+import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const migrationsPath = path.resolve(__dirname,"migrations")
+
+// In compiled dist/, fallback to src/db/migrations if dist/db/migrations doesn't exist
+let migrationsPath = path.resolve(__dirname, "migrations");
+if (!fsSync.existsSync(migrationsPath)) {
+    const srcMigrationsPath = path.resolve(process.cwd(), "src/db/migrations");
+    if (fsSync.existsSync(srcMigrationsPath)) {
+        migrationsPath = srcMigrationsPath;
+    }
+}
 
 const readMigrationFiles = async (): Promise<string[]> => {
     const files = await fs.readdir(migrationsPath);

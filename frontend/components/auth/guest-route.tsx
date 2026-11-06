@@ -6,18 +6,22 @@ import React, { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function GuestRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuthContext();
+  const { user, isAuthenticated, loading } = useAuthContext();
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Only fully registered users are prevented from accessing auth pages.
+  // Guests (user.isGuest === true) are permitted so they can create an account or sign in.
+  const isRegisteredUser = isAuthenticated && !user?.isGuest;
+
   useEffect(() => {
-    if (!loading && isAuthenticated) {
+    if (!loading && isRegisteredUser) {
       const redirect = searchParams.get("redirect") || "/dashboard";
       router.replace(redirect);
     }
-  }, [isAuthenticated, loading, router, searchParams]);
+  }, [isRegisteredUser, loading, router, searchParams]);
 
-  if (loading || isAuthenticated) {
+  if (loading || isRegisteredUser) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12 text-foreground">
         <div className="w-full max-w-md space-y-6 rounded-2xl border border-border bg-card p-8 shadow-xl">

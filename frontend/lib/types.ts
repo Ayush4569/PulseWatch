@@ -2,7 +2,29 @@ export interface User {
   id: string;
   username: string;
   email: string;
+  isGuest?: boolean;
   createdAt: string;
+}
+
+export interface TelemetrySummary {
+  totalMonitors: number;
+  activeMonitors: number;
+  openIncidents: number;
+  uptimePercent: number | null;
+  avgLatencyMs: number | null;
+  totalChecksAnalyzed: number;
+}
+
+export interface DashboardAiSummary {
+  status: "HEALTHY" | "DEGRADED" | "CRITICAL" | "INSUFFICIENT_DATA";
+  headline: string;
+  summary: string;
+  keyFindings: string[];
+  recommendations: string[];
+  telemetry: TelemetrySummary;
+  aiPowered: boolean;
+  model?: string;
+  generatedAt: string;
 }
 
 export interface AuthResponseData {

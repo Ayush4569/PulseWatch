@@ -1,8 +1,8 @@
-import z from "zod";
 import { CustomError } from "../../utils/apiError.js";
 import ApiResponse from "../../utils/apiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { getMonitorAnalytics } from "./analytics.service.js";
+import { getDashboardAiSummaryService } from "./ai-summary.service.js";
 
 const getSingleMonitorAnalytics = asyncHandler(async (req, res) => {
     const userId = req.user?.id;
@@ -29,6 +29,26 @@ const getSingleMonitorAnalytics = asyncHandler(async (req, res) => {
         )
     );
 });
+
+const getDashboardAiSummary = asyncHandler(async (req, res) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+        throw new CustomError(401, "Unauthorized!");
+    }
+
+    const summary = await getDashboardAiSummaryService(userId);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            "Dashboard AI summary generated successfully",
+            summary
+        )
+    );
+});
+
 export {
-    getSingleMonitorAnalytics
-}
+    getSingleMonitorAnalytics,
+    getDashboardAiSummary,
+};

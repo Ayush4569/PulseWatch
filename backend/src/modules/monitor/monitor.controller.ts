@@ -9,7 +9,12 @@ const createMonitor = asyncHandler(async (req, res) => {
 
     const { url, interval } = req.body;
 
-    const monitor = await createMonitorService(url, interval, userId);
+    const monitor = await createMonitorService(
+        url,
+        interval,
+        userId,
+        !!req.user?.isGuest
+    );
 
     return res.status(201).json(
         new ApiResponse(

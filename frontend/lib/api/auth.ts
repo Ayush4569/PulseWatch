@@ -23,6 +23,13 @@ export const loginApi = async (loginInput: Pick<RegisterInput, 'email' | 'passwo
     return response.data
 }
 
+export const createGuestSessionApi = async (): Promise<ApiResponse<AuthResponseData>> => {
+    const response = await apiClient
+        .post<ApiResponse<AuthResponseData>>
+        ("/auth/guest-session");
+    return response.data;
+}
+
 export const logoutApi = async (): Promise<ApiResponse<null>> => {
     const response = await apiClient
         .post<ApiResponse<null>>

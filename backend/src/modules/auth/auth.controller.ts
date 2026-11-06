@@ -5,7 +5,8 @@ import { CustomError } from "../../utils/apiError.js";
 import {
     getAccessCookieOptions,
     getRefreshCookieOptions,
-    getClearCookieOptions,
+    verifyAccessToken,
+    verifyRefreshToken,
 } from "../../utils/token.js";
 import {
     registerUserService,
@@ -13,11 +14,51 @@ import {
     logoutUserService,
     refreshTokensService,
     getUserProfileService,
+    createGuestSessionService,
 } from "./auth.service.js";
+
+export const createGuestSessionController = asyncHandler(
+    async (req: Request, res: Response) => {
+        const { user, tokens } = await createGuestSessionService();
+
+        res.cookie("accessToken", tokens.accessToken, getAccessCookieOptions());
+        res.cookie("refreshToken", tokens.refreshToken, getRefreshCookieOptions());
+
+        return res.status(201).json(
+            new ApiResponse(201, "Guest session initialized", {
+                user,
+                accessToken: tokens.accessToken,
+            })
+        );
+    }
+);
 
 export const registerController = asyncHandler(
     async (req: Request, res: Response) => {
-        const { user, tokens } = await registerUserService(req.body);
+       
+        let guestUserId: string | undefined;
+        try {
+            const token =
+                req.cookies?.accessToken ||
+                (req.headers.authorization?.startsWith("Bearer ")
+                    ? req.headers.authorization.split(" ")[1]
+                    : undefined);
+            if (token) {
+                const decoded = verifyAccessToken(token);
+                if (decoded?.isGuest) {
+                    guestUserId = decoded.id;
+                }
+            } else if (req.cookies?.refreshToken) {
+                const decoded = verifyRefreshToken(req.cookies.refreshToken);
+                if (decoded?.id) {
+                    guestUserId = decoded.id;
+                }
+            }
+        } catch {
+            // Ignore any token validation error here; regular registration will proceed
+        }
+
+        const { user, tokens } = await registerUserService(req.body, guestUserId);
 
         res.cookie("accessToken", tokens.accessToken, getAccessCookieOptions());
         res.cookie("refreshToken", tokens.refreshToken, getRefreshCookieOptions());
@@ -54,8 +95,8 @@ export const logoutController = asyncHandler(
             await logoutUserService(userId);
         }
 
-        res.clearCookie("accessToken",getAccessCookieOptions());
-        res.clearCookie("refreshToken",getRefreshCookieOptions());
+        res.clearCookie("accessToken", getAccessCookieOptions());
+        res.clearCookie("refreshToken", getRefreshCookieOptions());
 
         return res
             .status(200)

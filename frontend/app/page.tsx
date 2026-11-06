@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Activity,
   ShieldCheck,
@@ -10,12 +12,32 @@ import {
   Server,
   CheckCircle2,
   Lock,
+  Sparkles,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuthContext } from "@/context/auth-context";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api/client";
 
 export default function LandingPage() {
-  const { isAuthenticated, loading } = useAuthContext();
+  const { isAuthenticated, loading, loginAsGuest } = useAuthContext();
+  const [guestLoading, setGuestLoading] = useState(false);
+  const router = useRouter();
+
+  const handleGuestLaunch = async () => {
+    setGuestLoading(true);
+    try {
+      await loginAsGuest();
+      toast.success("Guest session started!", {
+        description: "You have 1 free monitor available to test the platform.",
+      });
+      router.push("/dashboard");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setGuestLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-emerald-500 selection:text-black transition-colors duration-200 overflow-x-hidden">
@@ -51,6 +73,15 @@ export default function LandingPage() {
             </Link>
           ) : (
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleGuestLaunch}
+                disabled={guestLoading}
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition px-3 py-1.5 rounded-lg border border-emerald-500/20"
+              >
+                <Sparkles className="h-3 w-3" />
+                <span>{guestLoading ? "Starting..." : "Try as Guest"}</span>
+              </button>
               <Link
                 href="/login"
                 className="text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition px-3 py-1.5"
@@ -90,7 +121,7 @@ export default function LandingPage() {
 
         {/* Animated Subtitle */}
         <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed animate-fade-in-up delay-300">
-          Monitor HTTP endpoints with precision, stream millisecond response latency via WebSockets, detect outages instantly with automated alerts, and maximize service reliability.
+          Monitor HTTP endpoints with precision, stream millisecond response latency via WebSockets, detect outages instantly with automated alerts, and synthesize AI-powered system health summaries.
         </p>
 
         {/* Animated Call-to-Actions */}
@@ -107,7 +138,7 @@ export default function LandingPage() {
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           ) : (
-            /* Unauthenticated user: Get Started + Sign In */
+            /* Unauthenticated user: Get Started + Try as Guest + Sign In */
             <>
               <Link
                 href="/register"
@@ -116,11 +147,22 @@ export default function LandingPage() {
                 <span>Get Started Free</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
+
+              <button
+                type="button"
+                onClick={handleGuestLaunch}
+                disabled={guestLoading}
+                className="flex items-center gap-2 rounded-xl border border-border bg-card/80 backdrop-blur-xs px-6 py-3.5 text-sm font-semibold text-foreground hover:bg-accent hover:border-emerald-500/40 transition-all shadow-xs active:scale-95"
+              >
+                <Sparkles className="h-4 w-4 text-emerald-500" />
+                <span>{guestLoading ? "Initializing..." : "Try Live as Guest (1 Monitor)"}</span>
+              </button>
+
               <Link
                 href="/login"
-                className="rounded-xl border border-border bg-card/80 backdrop-blur-xs px-6 py-3.5 text-sm font-semibold text-foreground hover:bg-accent hover:border-border/80 transition-all shadow-xs"
+                className="rounded-xl border border-transparent px-5 py-3.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all"
               >
-                Sign In to Account
+                Sign In
               </Link>
             </>
           )}
@@ -148,60 +190,55 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-            <div className="rounded-lg bg-muted/40 p-3">
-              <span className="text-[11px] text-muted-foreground uppercase font-medium">Status</span>
-              <p className="mt-1 font-mono text-sm font-bold text-emerald-500">200 OK</p>
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center sm:text-left">
+            <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50">
+              <span className="text-[10px] text-muted-foreground uppercase font-semibold">Response Time</span>
+              <p className="text-sm font-bold text-foreground">42ms</p>
             </div>
-            <div className="rounded-lg bg-muted/40 p-3">
-              <span className="text-[11px] text-muted-foreground uppercase font-medium">Latency</span>
-              <p className="mt-1 font-mono text-sm font-bold text-foreground">34 ms</p>
+            <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50">
+              <span className="text-[10px] text-muted-foreground uppercase font-semibold">Checks Run</span>
+              <p className="text-sm font-bold text-foreground">1,420</p>
             </div>
-            <div className="rounded-lg bg-muted/40 p-3">
-              <span className="text-[11px] text-muted-foreground uppercase font-medium">WebSocket</span>
-              <p className="mt-1 text-sm font-bold text-emerald-500 flex items-center justify-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live
-              </p>
+            <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50">
+              <span className="text-[10px] text-muted-foreground uppercase font-semibold">Active Incidents</span>
+              <p className="text-sm font-bold text-emerald-500">0 Open</p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50">
+              <span className="text-[10px] text-muted-foreground uppercase font-semibold">AI Intelligence</span>
+              <p className="text-sm font-bold text-foreground">Operational</p>
             </div>
           </div>
         </div>
 
-        {/* Feature Grid with Staggered Entrance and Hover Elevation */}
-        <div className="mt-20 grid grid-cols-1 gap-6 sm:grid-cols-3 text-left">
-          <div className="rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-xs shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-emerald-500/40 transition-all duration-300 animate-fade-in-up delay-500 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 mb-4 transition-transform group-hover:scale-110">
+        {/* Feature Highlights Grid */}
+        <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+          <div className="group rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-xs transition hover:border-emerald-500/40 hover:bg-card">
+            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 group-hover:scale-105 transition-transform">
               <Zap className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-bold text-foreground group-hover:text-emerald-500 transition-colors">
-              WebSocket Real-Time Checks
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Instant monitor status updates streamed over WebSockets without manual page reloads or polling spam.
+            <h3 className="text-base font-bold text-foreground">Real-time WebSocket Telemetry</h3>
+            <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+              Sub-millisecond latency graphs and live ping logs pushed instantly to your dashboard via authenticated WebSocket sockets.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-xs shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-blue-500/40 transition-all duration-300 animate-fade-in-up delay-600 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-500 mb-4 transition-transform group-hover:scale-110">
+          <div className="group rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-xs transition hover:border-emerald-500/40 hover:bg-card">
+            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10 text-teal-500 border border-teal-500/20 group-hover:scale-105 transition-transform">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-bold text-foreground group-hover:text-blue-500 transition-colors">
-              Instant Incident Alerts
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Automatic incident creation on consecutive check failures, with live resolution tracking when services recover.
+            <h3 className="text-base font-bold text-foreground">Autonomous Incident Detection</h3>
+            <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+              Automatic incident opening upon consecutive health check failures and automated resolution logging once services recover.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-xs shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-amber-500/40 transition-all duration-300 animate-fade-in-up delay-600 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 mb-4 transition-transform group-hover:scale-110">
-              <Server className="h-5 w-5" />
+          <div className="group rounded-2xl border border-border bg-card/60 p-6 backdrop-blur-xs transition hover:border-emerald-500/40 hover:bg-card">
+            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 group-hover:scale-105 transition-transform">
+              <Sparkles className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-bold text-foreground group-hover:text-amber-500 transition-colors">
-              Latency & Uptime Metrics
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              24-hour historical uptime percentage, average response latency, and time-series performance charts.
+            <h3 className="text-base font-bold text-foreground">AI Telemetry Intelligence</h3>
+            <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+              Integrated LLM & telemetry engine analyzes latency spikes, downtime trends, and error patterns to provide actionable reliability insights.
             </p>
           </div>
         </div>

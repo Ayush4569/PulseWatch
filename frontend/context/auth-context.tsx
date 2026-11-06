@@ -1,7 +1,13 @@
-import  { createContext, ReactNode, useContext, useEffect, useState } from 'react'
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react'
 import type { User } from '@/lib/types'
 import { refreshToken, setAccessToken } from '@/lib/api/client';
-import { getProfileApi, loginApi, logoutApi, registerApi } from '@/lib/api/auth';
+import {
+    getProfileApi,
+    loginApi,
+    logoutApi,
+    registerApi,
+    createGuestSessionApi,
+} from '@/lib/api/auth';
 
 interface RegisterInput {
     username: string;
@@ -13,19 +19,20 @@ interface LoginInput {
     email: string;
     password: string;
 }
+
 interface AuthContextValue {
-    user: User | null,
-    loading: boolean,
-    isAuthenticated: boolean,
-    login: (input: LoginInput) => Promise<void>,
-    register: (input: RegisterInput) => Promise<void>,
-    logout: () => Promise<void>
+    user: User | null;
+    loading: boolean;
+    isAuthenticated: boolean;
+    login: (input: LoginInput) => Promise<void>;
+    register: (input: RegisterInput) => Promise<void>;
+    loginAsGuest: () => Promise<void>;
+    logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined)
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
 
@@ -42,22 +49,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }
                 const response = await getProfileApi();
                 if (!cancelled) {
-                    setUser(response.data)
+                    setUser(response.data);
                 }
-            } catch (error) {
+            } catch {
                 if (!cancelled) {
-                    setUser(null)
-                    setAccessToken(null)
+                    setUser(null);
+                    setAccessToken(null);
                 }
             } finally {
-                if (!cancelled) setLoading(false)
+                if (!cancelled) setLoading(false);
             }
-        }
+        };
+
         void restoreSession();
         return () => {
             cancelled = true;
-        }
-    }, [])
+        };
+    }, []);
 
     const login = async (input: LoginInput) => {
         const response = await loginApi(input);
@@ -65,52 +73,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             throw new Error("Login response is missing authentication data");
         }
         const authData = response.data;
-
         setUser(authData.user);
-        setAccessToken(authData.accessToken)
-    }
+        setAccessToken(authData.accessToken);
+    };
 
     const register = async (input: RegisterInput) => {
         const response = await registerApi(input);
-         if (!response.data) {
+        if (!response.data) {
             throw new Error("Register response is missing authentication data");
         }
         const authData = response.data;
-
         setUser(authData.user);
-        setAccessToken(authData.accessToken)
-    }
+        setAccessToken(authData.accessToken);
+    };
+
+    const loginAsGuest = async () => {
+        const response = await createGuestSessionApi();
+        if (!response.data) {
+            throw new Error("Guest session response is missing authentication data");
+        }
+        const authData = response.data;
+        setUser(authData.user);
+        setAccessToken(authData.accessToken);
+    };
 
     const logout = async () => {
         try {
-            await logoutApi()
+            await logoutApi();
         } finally {
-            setUser(null)
-            setAccessToken(null)
+            setUser(null);
+            setAccessToken(null);
         }
-    }
+    };
+
     const value: AuthContextValue = {
         user,
         loading,
         isAuthenticated: user !== null,
         login,
         register,
-        logout
+        loginAsGuest,
+        logout,
     };
 
-    return <AuthContext.Provider value={value}>
-        {children}
-    </AuthContext.Provider>
-}
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
 
 export const useAuthContext = () => {
     const context = useContext(AuthContext);
 
     if (context === undefined) {
-        throw new Error(
-            "useAuthContext must be used within an AuthProvider"
-        );
+        throw new Error("useAuthContext must be used within an AuthProvider");
     }
 
     return context;
-}
+};
