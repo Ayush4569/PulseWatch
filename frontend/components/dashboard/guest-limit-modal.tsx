@@ -74,7 +74,7 @@ export function GuestLimitModal({ isOpen, onClose }: GuestLimitModalProps) {
             {features.map((feature) => (
               <li key={feature} className="flex items-center gap-2">
                 <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                  <Check className="h-2.5 w-2.5 stroke-[3]" />
+                  <Check className="h-2.5 w-2.5 stroke-3" />
                 </div>
                 <span>{feature}</span>
               </li>

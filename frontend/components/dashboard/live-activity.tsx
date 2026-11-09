@@ -3,7 +3,6 @@
 import { MonitorCheckEvent } from "../../lib/types";
 import { formatLatency, formatTimeAgo } from "../../lib/formatters";
 import { CheckCircle2, XCircle, Radio } from "lucide-react";
-import React from "react";
 
 interface LiveActivityProps {
   checks: MonitorCheckEvent[];

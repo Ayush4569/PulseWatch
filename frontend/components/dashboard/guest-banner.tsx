@@ -16,7 +16,7 @@ export function GuestBanner({ monitorCount }: GuestBannerProps) {
   return (
     <aside
       aria-label="Guest session notification"
-      className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-emerald-500/10 p-4 shadow-xs transition-all animate-in fade-in slide-in-from-top-2 duration-300"
+      className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-li-to-r from-amber-500/10 via-amber-500/5 to-emerald-500/10 p-4 shadow-xs transition-all animate-in fade-in slide-in-from-top-2 duration-300"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">

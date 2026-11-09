@@ -10,8 +10,9 @@ const envSchema = z.object({
     JWT_REFRESH_SECRET: z.string().min(10, { error: "JWT_REFRESH_SECRET IS TOO SHORT!" }),
     ACCESS_TOKEN_EXPIRY: z.string().default("15m"),
     REFRESH_TOKEN_EXPIRY: z.string().default("7d"),
-    REDIS_URL : z.string({error : "REDIS URL ABSENT!"}),
-    GEMINI_API_KEY: z.string().optional()
+    REDIS_URL: z.string({ error: "REDIS URL ABSENT!" }),
+    GEMINI_API_KEY: z.string(),
+    GEMINI_MODEL: z.string()
 })
 
 export const config = envSchema.parse(process.env);

@@ -62,7 +62,7 @@ export function AiDashboardSummary() {
     );
   }
 
-  const { status, headline, summary, keyFindings, recommendations, aiPowered, model } =
+  const { status, headline, summary, keyFindings, recommendations, aiPowered } =
     data;
 
   const statusConfig = {
@@ -104,11 +104,11 @@ export function AiDashboardSummary() {
   const StatusIcon = statusConfig.icon;
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-muted/20 p-5 sm:p-6 shadow-xs transition-all">
+    <section className="relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-card via-card to-muted/20 p-5 sm:p-6 shadow-xs transition-all">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500/20 via-teal-500/20 to-cyan-500/20 text-emerald-500 dark:text-emerald-400 border border-emerald-500/30 shadow-xs">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-tr from-emerald-500/20 via-teal-500/20 to-cyan-500/20 text-emerald-500 dark:text-emerald-400 border border-emerald-500/30 shadow-xs">
             <Sparkles className="h-5 w-5 animate-pulse" />
           </div>
           <div>
@@ -116,10 +116,6 @@ export function AiDashboardSummary() {
               <h2 className="text-sm font-bold text-foreground tracking-tight">
                 AI Telemetry Intelligence
               </h2>
-              <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground border border-border">
-                <Cpu className="h-3 w-3" />
-                {model || "Gemini 2.5 Flash"}
-              </span>
             </div>
             <p className="text-[11px] text-muted-foreground">
               Automated synthesis across active endpoints, latency, and incident reports.

@@ -23,7 +23,6 @@ export interface DashboardAiSummary {
   recommendations: string[];
   telemetry: TelemetrySummary;
   aiPowered: boolean;
-  model?: string;
   generatedAt: string;
 }
 

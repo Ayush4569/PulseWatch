@@ -192,14 +192,15 @@ export const getDashboardAiSummaryService = async (
     }`;
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: config.GEMINI_MODEL,
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
                 temperature: 0.2,
             },
         });
-
+        console.log('response',response);
+        
         const text = response.text;
         if (!text) {
             throw new CustomError(502, "Gemini API returned an empty response.");
@@ -221,7 +222,6 @@ export const getDashboardAiSummaryService = async (
                 : [],
             telemetry,
             aiPowered: true,
-            model: "Gemini 2.5 Flash",
             generatedAt: new Date().toISOString(),
         };
     } finally {
