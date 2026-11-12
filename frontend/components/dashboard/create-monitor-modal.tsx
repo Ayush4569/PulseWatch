@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { X, Globe, Clock, AlertCircle, ArrowRight } from "lucide-react";
+import { X, Globe, Clock, AlertCircle, ArrowRight, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { CreateMonitor } from "../../lib/types";
 import { createMonitorApi } from "@/lib/api/monitor";
@@ -153,12 +153,13 @@ export function CreateMonitorModal({
               <select
                 value={interval}
                 onChange={(e) => setInterval(Number(e.target.value))}
-                className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                className="w-full appearance-none rounded-lg border border-border bg-background py-2 pl-9 pr-9 text-sm text-foreground focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition cursor-pointer"
               >
                 <option value={30}>Every 30 seconds</option>
                 <option value={60}>Every 1 minute</option>
                 <option value={300}>Every 5 minutes</option>
               </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
 

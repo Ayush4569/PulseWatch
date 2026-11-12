@@ -38,10 +38,10 @@ export function GuestBanner({ monitorCount }: GuestBannerProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 sm:self-center">
+        <div className="flex items-center gap-2 shrink-0 sm:self-center w-full sm:w-auto">
           <Link
             href="/register"
-            className="group inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 dark:bg-emerald-500 px-3.5 py-2 text-xs font-semibold text-white dark:text-neutral-950 shadow-sm transition hover:bg-emerald-500 dark:hover:bg-emerald-400 active:scale-95"
+            className="group inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 dark:bg-emerald-500 px-3.5 py-2 text-xs font-semibold text-white dark:text-neutral-950 shadow-sm transition hover:bg-emerald-500 dark:hover:bg-emerald-400 active:scale-95 w-full sm:w-auto"
           >
             <span>Save Monitor & Sign Up</span>
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />

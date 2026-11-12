@@ -23,26 +23,44 @@ export const useToggleMonitor = () => {
     },
     onMutate: async ({ monitorId, isActive }) => {
       await queryClient.cancelQueries({ queryKey: ["monitors"] });
+      await queryClient.cancelQueries({ queryKey: ["monitor", monitorId, "details"] });
 
       const previousMonitors = queryClient.getQueryData<Monitor[]>(["monitors"]);
+      const previousDetails = queryClient.getQueryData<Monitor>(["monitor", monitorId, "details"]);
 
       queryClient.setQueryData<Monitor[]>(["monitors"], (old = []) =>
         old.map((m) => (m.id === monitorId ? { ...m, isActive } : m))
       );
 
-      return { previousMonitors };
+      if (previousDetails) {
+        queryClient.setQueryData<Monitor>(["monitor", monitorId, "details"], {
+          ...previousDetails,
+          isActive,
+        });
+      }
+
+      return { previousMonitors, previousDetails };
     },
-    onError: (err, _variables, context) => {
+    onError: (err, variables, context) => {
       if (context?.previousMonitors) {
         queryClient.setQueryData(["monitors"], context.previousMonitors);
+      }
+      if (context?.previousDetails) {
+        queryClient.setQueryData(
+          ["monitor", variables.monitorId, "details"],
+          context.previousDetails
+        );
       }
       toast.error("Failed to change monitor status", {
         description: getApiErrorMessage(err),
       });
     },
-    onSuccess: ({ isActive }) => {
+    onSuccess: ({ monitorId, isActive }) => {
       toast.success(isActive ? "Monitor resumed" : "Monitor paused");
       void queryClient.invalidateQueries({ queryKey: ["monitors"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["monitor", monitorId, "details"],
+      });
     },
   });
 };
@@ -60,6 +78,7 @@ export const useDeleteMonitor = () => {
     },
     onMutate: async (monitorId) => {
       await queryClient.cancelQueries({ queryKey: ["monitors"] });
+      await queryClient.cancelQueries({ queryKey: ["monitor", monitorId, "details"] });
 
       const previousMonitors = queryClient.getQueryData<Monitor[]>(["monitors"]);
 
@@ -84,10 +103,11 @@ export const useDeleteMonitor = () => {
         description: getApiErrorMessage(err),
       });
     },
-    onSuccess: () => {
+    onSuccess: (monitorId) => {
       toast.success("Monitor deleted successfully");
       void queryClient.invalidateQueries({ queryKey: ["monitors"] });
       void queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      queryClient.removeQueries({ queryKey: ["monitor", monitorId] });
     },
   });
 };

@@ -9,6 +9,7 @@ import {
   Mail,
   Lock,
   ArrowRight,
+  ArrowLeft,
   LoaderCircle,
   Sparkles,
 } from "lucide-react";
@@ -84,7 +85,17 @@ function RegisterForm() {
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-md space-y-6 rounded-2xl border border-border bg-card p-8 shadow-xl animate-in fade-in duration-300">
+      <div className="w-full max-w-md space-y-6 rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xl animate-in fade-in duration-300">
+        <div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition group"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+            <span>Back to home</span>
+          </Link>
+        </div>
+
         <header className="text-center">
           <Link
             href="/"

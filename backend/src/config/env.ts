@@ -12,7 +12,8 @@ const envSchema = z.object({
     REFRESH_TOKEN_EXPIRY: z.string().default("7d"),
     REDIS_URL: z.string({ error: "REDIS URL ABSENT!" }),
     GEMINI_API_KEY: z.string(),
-    GEMINI_MODEL: z.string()
+    PRIMARY_GEMINI_MODEL: z.string(),
+    SECONDARY_GEMINI_MODEL: z.string(),
 })
 
 export const config = envSchema.parse(process.env);

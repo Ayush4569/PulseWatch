@@ -28,6 +28,7 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Pause,
   Play,
   Trash2,
@@ -276,12 +277,12 @@ export default function MonitorDetailPage({
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {/* Pause / Resume Button */}
             <button
               onClick={handleToggle}
               disabled={toggleMutation.isPending}
-              className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition disabled:opacity-50 shadow-xs ${
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-medium transition disabled:opacity-50 shadow-xs active:scale-95 ${
                 isPaused
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
                   : "border-border bg-card text-foreground hover:bg-accent"
@@ -300,7 +301,7 @@ export default function MonitorDetailPage({
             {/* Delete Button */}
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/20 transition shadow-xs"
+              className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/20 transition shadow-xs active:scale-95"
               title="Delete monitor"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -310,7 +311,7 @@ export default function MonitorDetailPage({
             {/* Refresh Button */}
             <button
               onClick={() => void refreshAll()}
-              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition shadow-xs"
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-medium text-foreground hover:bg-accent transition shadow-xs active:scale-95"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               <span>Refresh Metrics</span>
@@ -416,17 +417,20 @@ export default function MonitorDetailPage({
               </p>
             </div>
 
-            <select
-              value={range}
-              onChange={(e) => setRange(e.target.value as Duration)}
-              className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-emerald-500 shadow-xs"
-            >
-              {ranges.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative inline-flex items-center">
+              <select
+                value={range}
+                onChange={(e) => setRange(e.target.value as Duration)}
+                className="appearance-none rounded-lg border border-border bg-card pl-3 pr-8 py-1.5 text-xs font-medium text-foreground outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-xs cursor-pointer transition"
+              >
+                {ranges.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            </div>
           </div>
 
           {seriesPending ? (

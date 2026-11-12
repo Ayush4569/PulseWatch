@@ -13,6 +13,7 @@ import {
   X,
   Sparkles,
   ArrowRight,
+  ChevronDown,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuthContext } from "@/context/auth-context";
@@ -190,6 +191,7 @@ export function Navbar({ onOpenCreateModal }: NavbarProps) {
                 <span className="max-w-[100px] truncate">
                   {user?.username}
                 </span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground ml-0.5" />
               </button>
 
               {userMenuOpen && (

@@ -191,16 +191,37 @@ export const getDashboardAiSummaryService = async (
     "recommendations": ["Recommendation 1", "Recommendation 2"]
     }`;
 
-        const response = await ai.models.generateContent({
-            model: config.GEMINI_MODEL,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                temperature: 0.2,
-            },
-        });
-        console.log('response',response);
-        
+        const primaryModel = config.PRIMARY_GEMINI_MODEL
+        const secondaryModel = config.SECONDARY_GEMINI_MODEL
+
+        let response;
+        let activeModel = primaryModel;
+
+        try {
+            response = await ai.models.generateContent({
+                model: primaryModel,
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    temperature: 0.2,
+                },
+            });
+        } catch (primaryError) {
+            console.warn(
+                `Primary Gemini model (${primaryModel}) failed or rate-limited. Falling back to secondary model (${secondaryModel}):`,
+                primaryError
+            );
+            activeModel = secondaryModel;
+            response = await ai.models.generateContent({
+                model: secondaryModel,
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    temperature: 0.2,
+                },
+            });
+        }
+
         const text = response.text;
         if (!text) {
             throw new CustomError(502, "Gemini API returned an empty response.");
@@ -222,6 +243,7 @@ export const getDashboardAiSummaryService = async (
                 : [],
             telemetry,
             aiPowered: true,
+            model: activeModel,
             generatedAt: new Date().toISOString(),
         };
     } finally {
