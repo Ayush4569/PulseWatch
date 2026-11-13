@@ -1,5 +1,8 @@
-# ⚡ PulseWatch — Real-Time Uptime & Incident Monitoring Platform
-👉 [https://pulsewatch.dev](https://pulsewatch.dev)  
+# ⚡ PulseWatch
+
+**A real-time uptime and incident monitoring platform. Track HTTP/HTTPS endpoints, monitor latency, detect downtime, and receive AI-generated incident reports.**
+
+🔗 **Live Demo:** [https://pulse-watch-hq.vercel.app](https://pulse-watch-hq.vercel.app)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-%23339933.svg?style=for-the-badge&logo=node.js&logoColor=white)
@@ -9,101 +12,87 @@
 ![Docker](https://img.shields.io/badge/Docker-%232496ED.svg?style=for-the-badge&logo=docker&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io-%23010101.svg?style=for-the-badge&logo=socketdotio&logoColor=white)
 
-**PulseWatch** is a production-grade, distributed uptime and infrastructure monitoring platform engineered for developers and DevOps teams. It provides continuous HTTP/HTTPS health checks, sub-millisecond response latency tracking, autonomous incident detection, and real-time telemetry streaming via WebSockets — complemented by AI-powered executive health intelligence using Google Gemini.
-
-Built from scratch with a focus on scalable distributed systems, PulseWatch decouples job scheduling, probe execution, real-time messaging, and analytical calculation across specialized worker queues and Redis pub/sub pipelines.
-
 ---
 
 ## 🚀 Features
 
-- 📡 **High-Precision Endpoint Monitoring** — Configurable probe intervals (30s, 60s, 300s) with automated URL normalization and timeout guards.
-- ⚡ **Real-Time WebSocket Telemetry** — Live health check stream pushing latency, response status, and timestamps directly to the client without polling.
-- 🚨 **Autonomous Incident State Machine** — Detects downtime and consecutive probe failures, logs open incidents with root-cause error reasons, and auto-resolves when endpoints recover.
-- 🧠 **AI Telemetry Intelligence** — Powered by the official Google Gemini SDK , synthesizing fleet uptime, latency degradation, and operational recommendations without hallucination.
-- 👤 **Guest Mode (Zero-Friction Demo)** — Immediate 1-monitor sandbox access for unauthenticated visitors, with automatic data migration and history preservation upon signing up.
-- 📊 **Interactive Latency & SLA Analytics** — Historical latency trend charting (1h, 6h, 24h, 3d), SLA percentage calculations, and paginated check audit logs.
-- 🔄 **Distributed Background Workers** — BullMQ and Redis-backed queue system isolating probe execution from the HTTP API server.
-- 🔐 **Production-Grade Authentication** — Dual-token JWT architecture (short-lived Access Tokens + rotating Refresh Tokens) stored in secure, HttpOnly, SameSite cookies.
-- 🐳 **Containerized Deployment** — Multi-stage Docker configuration supporting unified single-process or distributed multi-container execution.
+- 📡 **Configurable Health Checks:** Monitor any HTTP/HTTPS endpoint at intervals of 30s, 60s, or 300s with built-in request timeouts.
+- ⚡ **Real-Time Live Updates:** Every check result is pushed instantly to the frontend dashboard over WebSockets via Redis Pub/Sub without polling.
+- 🚨 **Automatic Incident Management:** Detects non-200 responses or network timeouts, opens an incident record, and automatically resolves it once the service recovers.
+- 📊 **Metrics & Analytics:** Interactive charts for response times (1h, 6h, 24h, 3d), uptime percentage calculations, and historical check logs.
+- 🧠 **AI-Powered Diagnostics:** Google Gemini analyzes metrics and response trends to generate concise health summaries and actionable recommendations.
+- 👤 **Guest Mode & Auth:** Immediate trial with 1 monitor without signing up (seamlessly preserved on account upgrade), with JWT authentication and rotating refresh tokens in HttpOnly cookies.
+- 🐳 **Docker-Ready:** Complete multi-stage Docker build and Docker Compose configuration for one-command local orchestration.
+
+---
+
+## 🧩 Architecture
+
+```mermaid
+graph TD
+    Dashboard[Next.js Dashboard] <-->|REST API & WebSockets| Server[Express API Server]
+    Server -->|Store Monitors & Auth| DB[(PostgreSQL)]
+    Server -->|Schedule Checks| Redis[(Redis Queue & Pub/Sub)]
+    Redis -->|Dispatch Jobs| Worker[BullMQ Worker]
+    Worker -->|HTTP Ping| Target([Target Endpoint])
+    Worker -->|Save Results & Incidents| DB
+    Worker -->|Publish Live Event| Redis
+    Redis -->|Forward Message| Server
+```
+
+### System Components
+
+| Component | Responsibility |
+|---|---|
+| **Frontend (`Next.js 15`)** | Dashboard displaying real-time response charts, incident logs, and monitor cards. |
+| **API Server (`Express`)** | Handles user authentication, monitor CRUD, metrics calculation, and Socket.IO connections. |
+| **Worker (`BullMQ`)** | Autonomous background process that executes scheduled pings and measures latency. |
+| **PostgreSQL** | Primary relational datastore for users, monitor configurations, check history, and incidents. |
+| **Redis** | Centralized broker for BullMQ job scheduling and real-time Pub/Sub WebSocket broadcasts. |
+| **Google Gemini** | Analyzes historical uptime data and latency anomalies to generate diagnostic summaries. |
 
 ---
 
 ## 🧱 Tech Stack
 
-| Layer | Technologies & Tools |
+| Layer | Technologies |
 |---|---|
-| **Frontend** | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, TanStack Query (React Query), Socket.IO Client, Lucide Icons, Sonner |
-| **Backend** | Node.js, Express, TypeScript , BullMQ, `pg` (PostgreSQL client with SSL pool), ioredis |
-| **Database** | PostgreSQL (Relational schema, indexed time-series logs, foreign key constraints) |
-| **Caching & Pub/Sub** | Redis (Distributed queues, job deduplication, multi-channel check broadcasting) |
-| **AI Intelligence** | Google Gemini API (`@google/genai` SDK with structured JSON output enforcement) |
-| **Authentication** | JWT (JSON Web Tokens) with cryptographic Refresh Token Rotation and Bcrypt |
-| **Validation** | Zod (Request parsing, type coercion, and URL normalization) |
-| **Infra & DevOps** | Docker (Multi-stage build), Docker Compose, Upstash Redis, Neon PostgreSQL |
-
----
-
-## 🧠 System Design & Architecture Highlights
-
-### 1. Decoupled Responsibilities & Job Queue Pipeline
-PulseWatch enforces a strict separation of concerns across the monitoring lifecycle:
-- **API Server:** Manages CRUD operations, monitor states, and client auth.
-- **Scheduler:** Translates interval definitions into BullMQ repeat patterns.
-- **Worker Pool:** Consumes queued probe jobs, executes isolated HTTP fetch requests, measures DNS/network latency, and records check results.
-- **Raw Event Storage:** All pings are recorded in `monitor_checks` as an immutable time-series log from which uptime and SLA statistics are calculated.
-
-```
- USER
-  │ (URL + interval)
-  ▼
-API Server ──▶ Database (monitors table)
-                 │
-                 ▼
-          BullMQ Scheduler (Redis)
-                 │
-                 ▼
-           Worker Pool ──▶ Target Endpoint (HTTP Probe)
-                 │
-                 ▼
-          Database (monitor_checks & incidents)
-                 │
-                 ▼
-          Redis Pub/Sub ──▶ Socket.IO Server ──▶ Dashboard Client
-```
-
-### 2. Real-Time Telemetry Broadcasting (Pub/Sub)
-Worker nodes publish completed check events directly into Redis Pub/Sub channels. The Socket.IO server layer subscribes to these channels and multiplexes events into authenticated, user-scoped rooms (`user:${userId}`). This ensures instant telemetry delivery without database polling overhead.
-
-### 3. Autonomous Incident Lifecycle
-Incidents are managed via a state-machine pattern:
-- **Failure Trigger:** When an active monitor fails a check (non-200 code or network timeout), the engine inspects for existing open incidents. If none exist, it opens a new incident record with the exact failure reason.
-- **Auto-Recovery:** As soon as an endpoint responds successfully with `200 OK`, any active incident is marked `RESOLVED` with a resolution timestamp.
-
-### 4. AI-Grounded Reliability Synthesis
-The AI summary engine queries user-specific telemetry data (mean response time, incident history, fleet uptime, and latency spikes exceeding $1.5\times$ average) and transmits the structured payload to Google Gemini (`gemini-2.5-flash`). Strict prompting and JSON schema enforcement ensure all returned key findings and recommendations are strictly grounded in actual metrics.
-
-### 5. Guest Onboarding & Account Preservation Flow
-Unauthenticated guests can test the platform with a 1-monitor limit enforced directly in PostgreSQL. When a guest decides to register, the backend upgrades the existing guest record in place (`is_guest = FALSE`), preserving all probe history, latency metrics, and incident logs seamlessly under their new permanent account.
+| **Frontend** | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, TanStack Query, Socket.IO Client, Lucide Icons |
+| **Backend** | Node.js (v22), Express 5, TypeScript, BullMQ, `pg` (PostgreSQL client), ioredis, Socket.IO |
+| **Database & Queue** | PostgreSQL, Redis |
+| **AI Integration** | Google Gemini API (`@google/genai`) |
+| **Authentication** | JWT with HttpOnly cookie rotation, Bcrypt, Zod validation |
+| **DevOps** | Docker, Docker Compose, Multi-stage builds |
 
 ---
 
 ## ⚙️ Environment Variables
 
 ### Backend (`backend/.env`)
+
 ```env
 PORT=8000
 NODE_ENV=development
-DATABASE_URL=postgresql://user:password@host:5432/pulsewatch?sslmode=require
-REDIS_URL=redis://default:password@host:6379
+CORS_ORIGIN=http://localhost:3000
+
+# Auth Secrets
 JWT_SECRET=your_super_secret_jwt_key_at_least_32_chars
 JWT_REFRESH_SECRET=your_super_secret_refresh_jwt_key_32_chars
 ACCESS_TOKEN_EXPIRY=15m
 REFRESH_TOKEN_EXPIRY=7d
+
+# Database & Cache (Use local or cloud URLs like Neon / Upstash)
+DATABASE_URL=postgresql://pulseuser:pulsepassword@postgres:5432/pulsewatch
+REDIS_URL=redis://redis:6379
+
+# Google Gemini API
 GEMINI_API_KEY=your_gemini_api_key
+PRIMARY_GEMINI_MODEL=gemini-2.5-flash
+SECONDARY_GEMINI_MODEL=gemini-2.5-pro
 ```
 
 ### Frontend (`frontend/.env.local`)
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 NEXT_PUBLIC_SOCKET_URL=http://localhost:8000
@@ -111,52 +100,94 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:8000
 
 ---
 
-## 🚀 Getting Started
+## 🏃 Running Locally
 
-### 1. Clone & Install Dependencies
+### Option A: Using Docker Compose (Fastest & Recommended)
+
+Run the published backend container alongside isolated local PostgreSQL and Redis services—no Node, Postgres, or Redis installation required on your host machine.
+
+#### 1. Clone the repository
 ```bash
-git clone https://github.com/your-username/PulseWatch.git
+git clone https://github.com/Ayush4569/PulseWatch.git
 cd PulseWatch
+```
 
-# Install backend dependencies
+#### 2. Configure backend environment
+Create `backend/.env` with your settings (remember to add your `GEMINI_API_KEY`):
+```bash
+cp backend/.env.example backend/.env   # or create backend/.env using the template above
+```
+
+#### 3. Run migrations & start backend stack
+```bash
+# Pull the latest published image from Docker Hub
+docker compose pull backend
+
+# Run database migrations to set up the schema
+docker compose run --rm backend node dist/db/migrate.js
+
+# Start backend, postgres, and redis in the background
+docker compose up -d
+```
+
+#### 4. Start the frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will be live at `http://localhost:3000` and the backend API at `http://localhost:8000`.
+
+To view backend logs or stop containers:
+```bash
+docker compose logs -f backend   # Follow backend logs
+docker compose down              # Stop all containers
+```
+
+---
+
+### Option B: Running from Source (Manual Setup)
+
+If you prefer running all services directly with Node.js on your machine:
+
+#### 1. Install dependencies
+```bash
+# Backend
 cd backend && npm install
 
-# Install frontend dependencies
+# Frontend
 cd ../frontend && npm install
 ```
 
-### 2. Run Database Migrations
+#### 2. Run database migrations
+Ensure your PostgreSQL and Redis instances are running and configured in `backend/.env`:
 ```bash
 cd backend
 npm run migrate
 ```
 
-### 3. Start Development Servers
+#### 3. Start development servers
 ```bash
-# Terminal 1: Backend Server
+# Terminal 1: API & WebSocket server
 cd backend && npm run dev
 
-# Terminal 2: BullMQ Monitoring Worker
+# Terminal 2: Health check worker (required for active pinging)
 cd backend && npm run worker
 
-# Terminal 3: Frontend Next.js Client
+# Terminal 3: Frontend dashboard
 cd frontend && npm run dev
-```
-
-### 4. Run via Docker
-```bash
-docker-compose up --build
 ```
 
 ---
 
 ## 🧑‍💻 Author
 
-> Built with ❤️ by **Ayush Mishra**  
-> 🔗 [LinkedIn](https://www.linkedin.com/in/ayush-mishra-659951293)
+Built by **Ayush Mishra**  
+🔗 [LinkedIn](https://www.linkedin.com/in/ayush-mishra-659951293)
 
 ---
 
 ## 🏷️ License
 
-This project is open-source and available under the [MIT License](LICENSE).
+This project is open source under the [MIT License](LICENSE).
