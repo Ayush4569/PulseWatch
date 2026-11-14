@@ -5,7 +5,7 @@ import { performHealthCheckService } from "../../modules/checks/checks.service.j
 import { publishMonitorCheck } from "../../websocket/publisher.js";
 
 import pool from "../../db/client.js";
-import redis, { redisPublisher } from "../../config/redis.js";
+import { redisPublisher } from "../../config/redis.js";
 
 const processMonitor = new Worker(
   "Monitors",
@@ -32,6 +32,8 @@ const processMonitor = new Worker(
   {
     connection,
     concurrency: 10,
+    drainDelay: 30,
+    stalledInterval: 120000,
   }
 );
 
@@ -58,7 +60,6 @@ const gracefulWorkerShutdown = async (signal: string) => {
   try {
     await processMonitor.close();
     await pool.end();
-    redis.disconnect();
     redisPublisher.disconnect();
     console.log("Worker shut down cleanly.");
     process.exit(0);

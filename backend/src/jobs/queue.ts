@@ -8,6 +8,7 @@ export const connection = {
     password: parsed.password || undefined,
     tls: parsed.protocol === "rediss:" ? {} : undefined,
     maxRetriesPerRequest: null,
+    keepAlive: 30000,
 };
 const monitorQueue = new Queue("Monitors",{
     connection,

@@ -31,7 +31,28 @@ const reconcileSchedulers = async () => {
         const result = await client.query(
             `SELECT id, interval_seconds AS interval FROM monitors WHERE is_active = true`
         );
-        for (const monitor of result.rows) {
+        const activeMonitors = result.rows;
+        const activeMonitorIdSet = new Set(activeMonitors.map((m: { id: string }) => m.id));
+
+        // Prune orphan schedulers from Redis that are no longer active in PostgreSQL
+        try {
+            const existingSchedulers = await monitorQueue.getJobSchedulers();
+            for (const scheduler of existingSchedulers) {
+                const schedulerId = scheduler.id || scheduler.key;
+                if (schedulerId && schedulerId.startsWith("monitor:")) {
+                    const monitorId = schedulerId.replace("monitor:", "");
+                    if (!activeMonitorIdSet.has(monitorId)) {
+                        console.log(`Pruning orphan scheduler from Redis: ${schedulerId}`);
+                        await removeMonitorScheduler(monitorId);
+                    }
+                }
+            }
+        } catch (schedulerErr) {
+            console.error("Failed to prune orphan schedulers from Redis:", schedulerErr);
+        }
+
+        // Register or update active monitors
+        for (const monitor of activeMonitors) {
             await registerMonitorScheduler(monitor.id, monitor.interval);
         }
     } finally {

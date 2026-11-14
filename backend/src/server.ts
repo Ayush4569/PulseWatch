@@ -5,7 +5,7 @@ import { config } from "./config/env.js";
 import { initalizeSocket } from "./websocket/socket.js";
 import { reconcileSchedulers } from "./jobs/scheduler.js";
 import monitorQueue from "./jobs/queue.js";
-import redis, {
+import {
   redisPublisher,
   redisSubscriber,
 } from "./config/redis.js";
@@ -62,7 +62,6 @@ const gracefulShutdown = async (signal: string) => {
     console.log("Closing Redis clients...");
     await redisSubscriber.unsubscribe();
     await Promise.all([
-      redis.quit(),
       redisPublisher.quit(),
       redisSubscriber.quit(),
     ]);

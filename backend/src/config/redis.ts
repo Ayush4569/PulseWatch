@@ -1,18 +1,18 @@
 import { config } from "../config/env.js";
 import { Redis } from "ioredis";
 
-const redis = new Redis(config.REDIS_URL)
+export const redisPublisher = new Redis(config.REDIS_URL, {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+    keepAlive: 30000,
+});
 
-redis.on("connect", () => {
-    console.log("Redis connected!");
-})
+export const redisSubscriber = new Redis(config.REDIS_URL, {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+    keepAlive: 30000,
+});
 
-redis.on("error", (err) => {
-    console.error("Redis connection error:", err);
-})
-
-export const redisPublisher = redis.duplicate();
-export const redisSubscriber = redis.duplicate();
 redisPublisher.on("error", (err) => console.error("Redis publisher error:", err));
 redisSubscriber.on("error", (err) => console.error("Redis subscriber error:", err));
-export default redis
+
